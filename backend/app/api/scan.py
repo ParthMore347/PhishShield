@@ -12,6 +12,7 @@ from app.models.schemas import (
 from app.services.heuristics import analyze_url_heuristics, parse_url_or_domain
 from app.services.nlp import analyze_text_nlp
 from app.services.qr import analyze_qr_code
+from app.services.database import database_service
 
 router = APIRouter()
 ERROR_MESSAGE = "Invalid URL or text format provided for threat analysis."
@@ -74,27 +75,32 @@ async def scan_link(request: ScanRequest):
         engine_results=EngineModuleResults(heuristics=heuristics, nlp=nlp, qr=qr_data),
         timestamp=datetime.utcnow(),
     )
-    TELEMETRY_LOGS.insert(0, {
+    telemetry_event = {
         "scan_id": scan_id, "url": display_target, "platform": request.platform,
         "verdict": verdict, "confidence": score,
         "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"), "synced": True,
-    })
+    }
+    TELEMETRY_LOGS.insert(0, telemetry_event)
     del TELEMETRY_LOGS[100:]
+    telemetry_event["synced"] = await database_service.insert_telemetry(telemetry_event)
     return result
 
 
 @router.get("/telemetry")
 async def get_telemetry():
-    total = len(TELEMETRY_LOGS)
-    malicious = sum(item["verdict"] == "MALICIOUS" for item in TELEMETRY_LOGS)
-    suspicious = sum(item["verdict"] == "SUSPICIOUS" for item in TELEMETRY_LOGS)
-    safe = sum(item["verdict"] == "SAFE" for item in TELEMETRY_LOGS)
+    persisted_logs = await database_service.get_recent_telemetry()
+    logs = persisted_logs or TELEMETRY_LOGS
+    total = len(logs)
+    malicious = sum(item["verdict"] == "MALICIOUS" for item in logs)
+    suspicious = sum(item["verdict"] == "SUSPICIOUS" for item in logs)
+    safe = sum(item["verdict"] == "SAFE" for item in logs)
     return {
         "status": "online",
+        "persistence": "mongodb" if database_service.connected else "memory",
         "total_scans": total,
         "stats": {
             "safe": safe, "suspicious": suspicious, "malicious": malicious,
             "threat_ratio": f"{round(((malicious + suspicious) / max(total, 1)) * 100, 1)}%",
         },
-        "recent_events": TELEMETRY_LOGS[:20],
+        "recent_events": logs[:20],
     }

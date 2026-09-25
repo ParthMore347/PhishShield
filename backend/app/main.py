@@ -1,17 +1,35 @@
 import os
 import uvicorn
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
+from pymongo.errors import PyMongoError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.api.scan import router as scan_router
+from app.services.database import database_service
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        await database_service.connect()
+    except PyMongoError:
+        # Keep local scanning available while exposing the failed persistence state
+        # through the telemetry endpoint and application logs.
+        pass
+    try:
+        yield
+    finally:
+        await database_service.close()
 
 app = FastAPI(
     title="PhishShield API",
     description="Multi-Source Phishing Detection Core Engine API",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan,
 )
 
 # Enable CORS for Chrome Extensions and mobile clients

@@ -15,7 +15,7 @@ PhishShield is an advanced, multi-platform phishing detection ecosystem designed
 
 ## 📐 Architecture & Data Relationship Overview
 
-PhishShield uses a stateless scanning request structure. The current development backend keeps recent telemetry in memory; the database relationships below remain the planned persistence design and are not changed by the validation update.
+PhishShield uses a stateless scanning request structure and persists recent scan telemetry in the existing MongoDB `scan_telemetry` collection. The database relationships below describe the planned data model and have not been changed.
 
 ```mermaid
 erDiagram

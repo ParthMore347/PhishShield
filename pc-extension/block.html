@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="PhishShield Active Defense Warning — Deceptive phishing target intercepted and quarantined before socket handshake.">
+    <title>PhishShield Active Defense — Deceptive Site Intercepted</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="block.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-grid"></div>
+    <div class="danger-glow"></div>
+
+    <main class="warning-container">
+        <!-- Top Status Pill -->
+        <div class="status-pill">
+            <span class="pulsing-dot"></span>
+            <span>PHISHSHIELD ACTIVE INTERCEPTION // PC EDGE MV3</span>
+        </div>
+
+        <!-- Main Danger Card -->
+        <div class="alert-card">
+            <div class="shield-container">
+                <div class="radar-pulse"></div>
+                <div class="hazard-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                </div>
+            </div>
+
+            <h1 class="alert-title">Deceptive Site Intercepted</h1>
+            <p class="alert-subtitle">
+                PhishShield real-time threat engines detected deceptive characteristics indicative of credential harvesting, brand spoofing, or malware distribution.
+            </p>
+
+            <!-- URL Details Box -->
+            <div class="url-strip">
+                <div class="url-header">
+                    <span class="url-label">TARGET URL BLOCKED</span>
+                    <span class="threat-tag" id="threat-tag">MALICIOUS (94% CONFIDENCE)</span>
+                </div>
+                <div class="url-value" id="blocked-url">https://suspicious-target-site.xyz/login</div>
+            </div>
+
+            <!-- Diagnostics Breakdown Grid -->
+            <div class="diagnostics-grid">
+                <div class="diag-card">
+                    <div class="diag-head">
+                        <span class="diag-icon">⚡</span>
+                        <span class="diag-title">Heuristic Engine</span>
+                    </div>
+                    <p class="diag-detail" id="diag-heuristics">
+                        Suspicious TLD (.xyz), high subdomain entropy, and disguised IP structure detected.
+                    </p>
+                </div>
+
+                <div class="diag-card">
+                    <div class="diag-head">
+                        <span class="diag-icon">🔍</span>
+                        <span class="diag-title">NLP Brand Guard</span>
+                    </div>
+                    <p class="diag-detail" id="diag-nlp">
+                        High-probability brand spoofing matched with urgency keyword cues ('verify', 'login', 'urgent').
+                    </p>
+                </div>
+
+                <div class="diag-card">
+                    <div class="diag-head">
+                        <span class="diag-icon">🛡️</span>
+                        <span class="diag-title">Defense Action</span>
+                    </div>
+                    <p class="diag-detail">
+                        Navigation halted before socket handshake to protect saved passwords, cookies, and tokens.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="actions-group">
+                <button id="btn-safety" class="btn-primary">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                    Return to Safety (Recommended)
+                </button>
+                <button id="btn-bypass-toggle" class="btn-secondary">
+                    Advanced Options
+                </button>
+            </div>
+
+            <!-- Advanced Bypass Panel (Hidden by default) -->
+            <div id="bypass-panel" class="bypass-panel hidden">
+                <div class="bypass-warning">
+                    <strong>Warning:</strong> Bypassing this security barrier can expose your financial data, session tokens, and passwords to unauthorized actors.
+                </div>
+                <button id="btn-bypass-confirm" class="btn-danger-outline">
+                    Proceed to Unsafe Site (Bypass PhishShield Protection)
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer Telemetry & Clickable Contacts -->
+        <footer class="footer-telemetry">
+            <span>Scan ID: <strong id="scan-id">PS-EDGE-9082</strong></span>
+            <span>•</span>
+            <span>MongoDB Synced</span>
+            <span>•</span>
+            <span id="timestamp-text">2026-09-20 18:40 UTC</span>
+            <span>•</span>
+            <a href="mailto:security@phishshield.org" style="color: var(--text-muted); text-decoration: none;">✉️ Support</a>
+            <span>•</span>
+            <a href="tel:+18005557447" style="color: var(--text-muted); text-decoration: none;">📞 Hotline</a>
+        </footer>
+    </main>
+
+    <script src="block.js"></script>
+</body>
+</html>

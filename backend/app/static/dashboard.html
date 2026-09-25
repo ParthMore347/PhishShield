@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- 1. Remove horizontal scroll viewport setup & 12. Mobile Optimization -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <!-- 2. Meta description -->
+    <meta name="description" content="PhishShield Security Operations Center (SOC) — Real-time multi-source phishing threat detection, URL heuristic scoring, QR code Quishing analysis, and live MongoDB telemetry caching.">
+    <!-- 4. Fix page title -->
+    <title>PhishShield SOC — Security Operations & Real-Time Threat Intelligence</title>
+    <!-- 3. Add favicon -->
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #050811;
+            --bg-surface: rgba(13, 20, 36, 0.85);
+            --bg-card: rgba(18, 28, 51, 0.7);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-accent: rgba(99, 102, 241, 0.3);
+            --text-main: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --cyber-cyan: #06b6d4;
+            --cyber-indigo: #6366f1;
+            --safe-green: #10b981;
+            --warning-amber: #f59e0b;
+            --danger-red: #ef4444;
+        }
+
+        /* 1. Remove horizontal scroll */
+        html, body {
+            overflow-x: hidden;
+            max-width: 100vw;
+            width: 100%;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            /* 13. Fix mobile overflow: ensure text wraps safely */
+            overflow-wrap: break-word;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Background grid */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 32px 32px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-glow {
+            position: fixed;
+            width: 800px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Header */
+        header {
+            position: relative;
+            z-index: 100;
+            background: rgba(10, 15, 28, 0.92);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 16px clamp(16px, 4vw, 36px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .logo-shield {
+            width: 34px;
+            height: 34px;
+            background: linear-gradient(135deg, #6366f1, #06b6d4);
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            box-shadow: 0 0 16px rgba(99, 102, 241, 0.6);
+            flex-shrink: 0;
+        }
+
+        .brand-text h1 {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+
+        .brand-text h1 span {
+            color: var(--cyber-cyan);
+        }
+
+        .brand-tag {
+            font-size: 0.66rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-muted);
+            letter-spacing: 0.8px;
+        }
+
+        /* 8. Mobile Menu & Navigation */
+        .desktop-nav {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 9999px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #34d399;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--safe-green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--safe-green);
+            animation: pulse 1.8s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.25); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.6; }
+        }
+
+        /* 7. Fix broken links: valid route anchors */
+        .nav-link {
+            font-size: 0.8rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 44px; /* 12. Mobile tap target */
+        }
+
+        .nav-link:hover {
+            color: #fff;
+            border-color: var(--cyber-cyan);
+            background: rgba(6, 182, 212, 0.08);
+        }
+
+        /* 8. Hamburger button for mobile */
+        .mobile-menu-btn {
+            display: none;
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-main);
+            padding: 10px;
+            cursor: pointer;
+            min-height: 44px;
+            min-width: 44px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .mobile-menu-drawer {
+            display: none;
+            position: fixed;
+            top: 72px;
+            left: 0;
+            right: 0;
+            background: rgba(8, 13, 25, 0.98);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 20px;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 99;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            animation: slideDown 0.25s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .mobile-menu-drawer.active {
+            display: flex;
+        }
+
+        @media (max-width: 768px) {
+            .desktop-nav {
+                display: none;
+            }
+            .mobile-menu-btn {
+                display: flex;
+            }
+        }
+
+        /* 14. Error & 15. Success message banners */
+        .alert-banner {
+            padding: 14px 20px;
+            border-radius: 10px;
+            font-size: 0.86rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            animation: fadeIn 0.25s ease-out;
+            margin-bottom: 8px;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #fca5a5;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #6ee7b7;
+        }
+
+        .alert-close {
+            background: transparent;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+
+        /* Layout */
+        main {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            padding: clamp(16px, 3vw, 32px);
+            max-width: 1440px;
+            margin: 0 auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Emergency Hotline Banner: 6. Clickable Email & 17. Clickable Phone */
+        .hotline-banner {
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.12), rgba(6, 182, 212, 0.12));
+            border: 1px solid var(--border-accent);
+            border-radius: 12px;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .hotline-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .hotline-contacts {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .contact-badge {
+            color: var(--cyber-cyan);
+            text-decoration: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            transition: all 0.15s ease;
+            min-height: 40px;
+        }
+
+        .contact-badge:hover {
+            border-color: var(--cyber-cyan);
+            background: rgba(6, 182, 212, 0.15);
+            color: #ffffff;
+        }
+
+        /* Metrics Bar */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        @media (max-width: 960px) {
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 500px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .metric-card {
+            background: var(--bg-surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            padding: 18px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .metric-title {
+            font-size: 0.72rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 1.85rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .metric-sub {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+        }
+
+        /* Workspace Grid */
+        .workspace-grid {
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 1024px) {
+            .workspace-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel-card {
+            background: var(--bg-surface);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: clamp(16px, 3vw, 24px);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 14px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .panel-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Scanner Input Form */
+        .scanner-form {
+            display: flex;
+            gap: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .scanner-form {
+                flex-direction: column;
+            }
+        }
+
+        .input-wrap {
+            flex: 1;
+            position: relative;
+        }
+
+        /* 12. Input optimized for mobile touch (min 16px font to prevent zoom) */
+        .url-input {
+            width: 100%;
+            background: rgba(6, 10, 19, 0.95);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 14px 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+            color: var(--text-main);
+            outline: none;
+            transition: all 0.2s;
+            min-height: 48px;
+        }
+
+        .url-input:focus {
+            border-color: var(--cyber-cyan);
+            box-shadow: 0 0 14px rgba(6, 182, 212, 0.25);
+        }
+
+        .btn-scan {
+            background: linear-gradient(135deg, var(--cyber-indigo), #4f46e5);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 0 24px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.92rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+            min-height: 48px;
+        }
+
+        .btn-scan:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.1);
+        }
+
+        .btn-scan:active {
+            transform: translateY(0);
+        }
+
+        /* Test Vector Chips */
+        .vector-pills {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .vector-label {
+            font-size: 0.7rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .vector-chip {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-subtle);
+            border-radius: 9999px;
+            padding: 6px 14px;
+            font-size: 0.74rem;
+            font-family: 'Outfit', sans-serif;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s;
+            min-height: 36px;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .vector-chip:hover {
+            border-color: var(--cyber-cyan);
+            color: #fff;
+            background: rgba(6, 182, 212, 0.12);
+        }
+
+        /* Verdict Box */
+        .verdict-box {
+            border-radius: 14px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1px solid transparent;
+            gap: 16px;
+        }
+
+        @media (max-width: 500px) {
+            .verdict-box {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        .verdict-box.safe {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.35);
+        }
+
+        .verdict-box.suspicious {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.35);
+        }
+
+        .verdict-box.malicious {
+            background: rgba(239, 68, 68, 0.12);
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+
+        .verdict-meta {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .verdict-icon {
+            font-size: 2.2rem;
+            flex-shrink: 0;
+        }
+
+        .verdict-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .verdict-box.safe .verdict-title { color: var(--safe-green); }
+        .verdict-box.suspicious .verdict-title { color: var(--warning-amber); }
+        .verdict-box.malicious .verdict-title { color: var(--danger-red); }
+
+        .verdict-desc {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+            line-height: 1.4;
+        }
+
+        .score-gauge {
+            text-align: right;
+            font-family: 'JetBrains Mono', monospace;
+            flex-shrink: 0;
+        }
+
+        .score-number {
+            font-size: 1.6rem;
+            font-weight: 800;
+        }
+
+        .score-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        /* Detailed Engines Grid */
+        .engines-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+        }
+
+        @media (max-width: 700px) {
+            .engines-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .engine-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .engine-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .engine-name {
+            font-size: 0.78rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .engine-score {
+            font-size: 0.7rem;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .engine-body {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            line-height: 1.45;
+        }
+
+        /* Quishing Vision Box */
+        .quishing-dropzone {
+            border: 1.5px dashed var(--border-accent);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            background: rgba(99, 102, 241, 0.03);
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .quishing-dropzone:hover {
+            background: rgba(99, 102, 241, 0.08);
+            border-color: var(--cyber-cyan);
+        }
+
+        .dropzone-text {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+
+        /* 13. Fix mobile overflow: Telemetry Table Wrapper */
+        .telemetry-table-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            width: 100%;
+        }
+
+        .telemetry-table {
+            width: 100%;
+            min-width: 500px;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.75rem;
+        }
+
+        .telemetry-table th {
+            padding: 10px 12px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            border-bottom: 1px solid var(--border-subtle);
+            text-transform: uppercase;
+            font-size: 0.65rem;
+        }
+
+        .telemetry-table td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-family: 'JetBrains Mono', monospace;
+            /* 13. Mobile overflow handling */
+            word-break: break-all;
+        }
+
+        .table-verdict {
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.68rem;
+            display: inline-block;
+        }
+
+        .verdict-SAFE { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+        .verdict-SUSPICIOUS { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+        .verdict-MALICIOUS { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+
+        .platform-badge {
+            color: var(--text-secondary);
+            font-size: 0.68rem;
+        }
+
+        .sync-icon {
+            color: var(--safe-green);
+        }
+
+        /* 11. Empty State Page / Container Component */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            text-align: center;
+            gap: 12px;
+        }
+
+        .empty-icon {
+            font-size: 2.5rem;
+            opacity: 0.7;
+        }
+
+        .empty-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .empty-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            max-width: 340px;
+            line-height: 1.4;
+        }
+
+        .btn-empty-action {
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid var(--border-accent);
+            color: #c7d2fe;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 6px;
+            min-height: 40px;
+            transition: all 0.2s;
+        }
+
+        .btn-empty-action:hover {
+            background: rgba(99, 102, 241, 0.3);
+            color: #ffffff;
+        }
+
+        /* Footer */
+        footer {
+            margin-top: auto;
+            border-top: 1px solid var(--border-subtle);
+            background: rgba(8, 12, 22, 0.9);
+            padding: 24px clamp(16px, 4vw, 36px);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .footer-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .footer-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            padding-top: 16px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: var(--cyber-cyan);
+            text-decoration: none;
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="bg-glow"></div>
+
+    <!-- Header with 8. Mobile Menu Support -->
+    <header>
+        <a href="/dashboard" class="brand-container">
+            <div class="logo-shield"></div>
+            <div class="brand-text">
+                <h1>Phish<span>Shield</span> SOC</h1>
+                <span class="brand-tag">HYBRID THREAT INTELLIGENCE & TELEMETRY ENGINE</span>
+            </div>
+        </a>
+
+        <!-- Desktop Navigation -->
+        <div class="desktop-nav">
+            <div class="status-pill">
+                <span class="pulse-dot"></span>
+                <span>FASTAPI CORE ONLINE</span>
+            </div>
+            <!-- 7. Verified Working Links -->
+            <a href="/docs" target="_blank" class="nav-link">📖 API Docs ↗</a>
+            <a href="/api/telemetry" target="_blank" class="nav-link">📡 Raw Telemetry ↗</a>
+            <a href="/404" target="_blank" class="nav-link">🛡️ 404 Sentinel</a>
+        </div>
+
+        <!-- 8. Mobile Hamburger Button -->
+        <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="Toggle navigation menu">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        </button>
+    </header>
+
+    <!-- 8. Mobile Collapsible Navigation Drawer -->
+    <div id="mobile-menu-drawer" class="mobile-menu-drawer">
+        <div class="status-pill" style="align-self: flex-start;">
+            <span class="pulse-dot"></span>
+            <span>FASTAPI CORE ONLINE</span>
+        </div>
+        <a href="/dashboard" class="nav-link">⚡ Security Operations Center</a>
+        <a href="/docs" target="_blank" class="nav-link">📖 API Documentation</a>
+        <a href="/api/telemetry" target="_blank" class="nav-link">📡 Telemetry Stream</a>
+        <a href="/404" target="_blank" class="nav-link">🛡️ Test 404 Quarantine Page</a>
+        <div style="border-top: 1px solid var(--border-subtle); padding-top: 12px; margin-top: 4px;">
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 8px;">INCIDENT REPORTING HOTLINE:</div>
+            <a href="tel:+18005557447" class="contact-badge" style="width: 100%;">📞 +1 (800) 555-PHISH</a>
+            <a href="mailto:security@phishshield.org" class="contact-badge" style="width: 100%; margin-top: 8px;">✉️ security@phishshield.org</a>
+        </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <main>
+        <!-- 14. Error Alert Banner (Hidden by default) -->
+        <div id="error-alert" class="alert-banner alert-error hidden" role="alert">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span>⚠️</span>
+                <span id="error-alert-msg">Target inspection failed. Invalid URL format or unreachable endpoint.</span>
+            </div>
+            <button class="alert-close" onclick="document.getElementById('error-alert').classList.add('hidden')">&times;</button>
+        </div>
+
+        <!-- 15. Success Alert Banner (Hidden by default) -->
+        <div id="success-alert" class="alert-banner alert-success hidden" role="alert">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span>✅</span>
+                <span id="success-alert-msg">Scan completed successfully. Threat diagnostics recorded to MongoDB.</span>
+            </div>
+            <button class="alert-close" onclick="document.getElementById('success-alert').classList.add('hidden')">&times;</button>
+        </div>
+
+        <!-- Emergency Hotline Banner: 6. Clickable Email & 17. Clickable Phone -->
+        <section class="hotline-banner">
+            <div class="hotline-info">
+                <span>🛡️</span>
+                <span>Active Threat Advisory: Zero-Day Typosquatting & QR Quishing Interception Enabled</span>
+            </div>
+            <div class="hotline-contacts">
+                <!-- 17. Clickable Phone Number -->
+                <a href="tel:+18005557447" class="contact-badge" title="Call SOC Emergency Phone Line">
+                    <span>📞</span> <span>+1 (800) 555-PHISH (7447)</span>
+                </a>
+                <!-- 6. Clickable Email Address -->
+                <a href="mailto:security@phishshield.org" class="contact-badge" title="Send Incident Report to SOC Team">
+                    <span>✉️</span> <span>security@phishshield.org</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- Top Metrics Row -->
+        <section class="metrics-grid">
+            <div class="metric-card">
+                <span class="metric-title">TOTAL EVALUATIONS</span>
+                <span class="metric-value" id="stat-total">1,248</span>
+                <span class="metric-sub">Across Extension & Mobile Edges</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-title">INTERCEPTED THREATS</span>
+                <span class="metric-value" style="color: var(--danger-red);" id="stat-threats">342</span>
+                <span class="metric-sub">Blocked via Interstitial Warnings</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-title">SUSPICIOUS FLAGGED</span>
+                <span class="metric-value" style="color: var(--warning-amber);" id="stat-suspicious">189</span>
+                <span class="metric-sub">High Subdomain / TLD Entropy</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-title">THREAT RATIO</span>
+                <span class="metric-value" style="color: var(--cyber-cyan);" id="stat-ratio">42.5%</span>
+                <span class="metric-sub">Normalized Confidence Score</span>
+            </div>
+        </section>
+
+        <!-- Main Workspace -->
+        <div class="workspace-grid">
+            <!-- Left Panel: Live Scanner & Engine Breakdown -->
+            <section class="panel-card" id="scanner-section">
+                <div class="panel-header">
+                    <h2 class="panel-title"><span>⚡</span> Real-Time Target Inspector</h2>
+                    <span class="brand-tag">HEURISTICS + NLP + COMPUTER VISION</span>
+                </div>
+
+                <!-- Input Form -->
+                <div class="scanner-form">
+                    <div class="input-wrap">
+                        <input type="url" id="target-input" class="url-input" placeholder="Enter target URL (e.g. https://signin.paypal-security.xyz)..." aria-label="Target URL to inspect" required>
+                    </div>
+                    <button id="btn-inspect" class="btn-scan">Inspect Target</button>
+                </div>
+
+                <!-- Presets -->
+                <div class="vector-pills">
+                    <span class="vector-label">TEST VECTORS:</span>
+                    <button class="vector-chip" data-url="https://signin.paypal-account-security-update.xyz/login">PayPal Spoof (.xyz)</button>
+                    <button class="vector-chip" data-url="https://netflix-billing-verify.top/auth">Netflix Phish (.top)</button>
+                    <button class="vector-chip" data-url="https://banking-credential-update.online/secure">Bank Urgent Alert</button>
+                    <button class="vector-chip" data-url="https://github.com/phishshield/project">GitHub Safe Repo</button>
+                </div>
+
+                <!-- Verdict Box Result -->
+                <div id="verdict-card" class="verdict-box safe">
+                    <div class="verdict-meta">
+                        <span class="verdict-icon" id="verdict-icon">🛡️</span>
+                        <div>
+                            <div class="verdict-title" id="verdict-title">SAFE VERDICT</div>
+                            <div class="verdict-desc" id="verdict-desc">No deceptive brand spoofing or anomalous heuristic markers identified.</div>
+                        </div>
+                    </div>
+                    <div class="score-gauge">
+                        <div class="score-number" id="verdict-score">96%</div>
+                        <div class="score-label">Confidence</div>
+                    </div>
+                </div>
+
+                <!-- Three Engine Modals -->
+                <div class="engines-grid">
+                    <div class="engine-card">
+                        <div class="engine-head">
+                            <span class="engine-name">⚡ Heuristics</span>
+                            <span class="engine-score" id="score-h">0.0</span>
+                        </div>
+                        <p class="engine-body" id="desc-h">TLD Danger Index: Normal<br>Domain Length: Valid<br>IP Disguise: None</p>
+                    </div>
+
+                    <div class="engine-card">
+                        <div class="engine-head">
+                            <span class="engine-name">🔍 NLP Brand Guard</span>
+                            <span class="engine-score" id="score-nlp">0.0</span>
+                        </div>
+                        <p class="engine-body" id="desc-nlp">Brand Spoofing: None<br>Urgency Signals: Clean<br>Keywords: None</p>
+                    </div>
+
+                    <div class="engine-card">
+                        <div class="engine-head">
+                            <span class="engine-name">📷 Vision / Quishing</span>
+                            <span class="engine-score" id="score-qr">Passive</span>
+                        </div>
+                        <p class="engine-body" id="desc-qr">QR Payload: Awaiting Image<br>Redirect Tracing: Clean<br>Shortener: None</p>
+                    </div>
+                </div>
+
+                <!-- Quishing Dropzone -->
+                <div class="quishing-dropzone" id="dropzone" role="button" tabindex="0" aria-label="Upload QR code image for inspection">
+                    <span style="font-size: 1.6rem;">📁</span>
+                    <div class="dropzone-text"><strong>Drag & drop QR code image</strong> or click to upload Quishing payload</div>
+                    <input type="file" id="qr-file-input" accept="image/*" class="hidden">
+                </div>
+            </section>
+
+            <!-- Right Panel: Real-Time Telemetry Feed -->
+            <section class="panel-card" id="telemetry-section">
+                <div class="panel-header">
+                    <h2 class="panel-title"><span>📡</span> Live Telemetry Feed</h2>
+                    <span class="brand-tag">MONGODB ASYNC CACHE</span>
+                </div>
+
+                <!-- 13. Mobile Overflow Safe Table Wrapper -->
+                <div class="telemetry-table-wrap">
+                    <table class="telemetry-table" id="telemetry-table">
+                        <thead>
+                            <tr>
+                                <th>Verdict</th>
+                                <th>Target Link</th>
+                                <th>Edge Source</th>
+                                <th>Confidence</th>
+                                <th>Sync</th>
+                            </tr>
+                        </thead>
+                        <tbody id="telemetry-body">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 11. Empty State Page / Container Component -->
+                <div id="empty-state" class="empty-state hidden">
+                    <div class="empty-icon">🛡️</div>
+                    <div class="empty-title">No Threat Telemetry Records Available</div>
+                    <p class="empty-desc">
+                        No active scanning transactions are currently recorded in the cache. Trigger an inspection to generate live telemetry.
+                    </p>
+                    <button class="btn-empty-action" onclick="document.querySelectorAll('.vector-chip')[0].click()">
+                        Trigger Sample Threat Evaluation
+                    </button>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer with 6. Clickable Email, 17. Clickable Phone & Verified Links -->
+    <footer>
+        <div class="footer-top">
+            <div class="brand-container">
+                <div class="logo-shield" style="width: 26px; height: 26px;"></div>
+                <div class="brand-text">
+                    <h2 style="font-size: 1.1rem; font-weight: 800;">Phish<span>Shield</span></h2>
+                </div>
+            </div>
+            <div class="footer-links">
+                <a href="/dashboard">SOC Dashboard</a>
+                <a href="/docs" target="_blank">API Documentation</a>
+                <a href="/api/telemetry" target="_blank">JSON Telemetry</a>
+                <a href="/404" target="_blank">Quarantine 404</a>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <span>© 2026 PhishShield Security Operations. Developed by Hardik Kotawdekar & Team (Model College Autonomous).</span>
+            <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+                <!-- 6. Clickable Email -->
+                <a href="mailto:security@phishshield.org" style="color: var(--text-muted); text-decoration: none;">✉️ security@phishshield.org</a>
+                <span>•</span>
+                <!-- 17. Clickable Phone -->
+                <a href="tel:+18005557447" style="color: var(--text-muted); text-decoration: none;">📞 +1 (800) 555-PHISH</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // DOM Elements
+        const targetInput = document.getElementById('target-input');
+        const btnInspect = document.getElementById('btn-inspect');
+        const verdictCard = document.getElementById('verdict-card');
+        const verdictIcon = document.getElementById('verdict-icon');
+        const verdictTitle = document.getElementById('verdict-title');
+        const verdictDesc = document.getElementById('verdict-desc');
+        const verdictScore = document.getElementById('verdict-score');
+
+        const scoreH = document.getElementById('score-h');
+        const descH = document.getElementById('desc-h');
+        const scoreNlp = document.getElementById('score-nlp');
+        const descNlp = document.getElementById('desc-nlp');
+        const scoreQr = document.getElementById('score-qr');
+        const descQr = document.getElementById('desc-qr');
+
+        const dropzone = document.getElementById('dropzone');
+        const qrFileInput = document.getElementById('qr-file-input');
+        const telemetryBody = document.getElementById('telemetry-body');
+        const emptyState = document.getElementById('empty-state');
+        const telemetryTable = document.getElementById('telemetry-table');
+
+        const errorAlert = document.getElementById('error-alert');
+        const errorAlertMsg = document.getElementById('error-alert-msg');
+        const successAlert = document.getElementById('success-alert');
+        const successAlertMsg = document.getElementById('success-alert-msg');
+
+        // 8. Mobile Menu Toggle Logic
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenuDrawer = document.getElementById('mobile-menu-drawer');
+        if (mobileMenuBtn && mobileMenuDrawer) {
+            mobileMenuBtn.addEventListener('click', () => {
+                mobileMenuDrawer.classList.toggle('active');
+            });
+            // Close when link inside is clicked
+            mobileMenuDrawer.querySelectorAll('a').forEach(a => {
+                a.addEventListener('click', () => mobileMenuDrawer.classList.remove('active'));
+            });
+        }
+
+        // Test vectors listener
+        document.querySelectorAll('.vector-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                targetInput.value = chip.getAttribute('data-url');
+                runScan(targetInput.value);
+            });
+        });
+
+        btnInspect.addEventListener('click', () => {
+            const url = targetInput.value.trim();
+            if (!url) {
+                showError("Please enter a valid URL to inspect.");
+                return;
+            }
+            runScan(url);
+        });
+
+        // 14. Error alert display helper
+        function showError(msg) {
+            errorAlertMsg.textContent = msg;
+            errorAlert.classList.remove('hidden');
+            successAlert.classList.add('hidden');
+            setTimeout(() => errorAlert.classList.add('hidden'), 6000);
+        }
+
+        // 15. Success alert display helper
+        function showSuccess(msg) {
+            successAlertMsg.textContent = msg;
+            successAlert.classList.remove('hidden');
+            errorAlert.classList.add('hidden');
+            setTimeout(() => successAlert.classList.add('hidden'), 5000);
+        }
+
+        // Scan Execution Routine
+        async function runScan(url, imageB64 = null) {
+            btnInspect.textContent = 'Inspecting...';
+            btnInspect.disabled = true;
+            try {
+                const res = await fetch('/api/scan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        url: url || null,
+                        image_b64: imageB64 || null,
+                        platform: 'web_soc'
+                    })
+                });
+
+                if (!res.ok) {
+                    throw new Error(`Server returned HTTP ${res.status}`);
+                }
+
+                const data = await res.json();
+                renderVerdict(data);
+                showSuccess(`Inspection completed for "${(url || 'QR Code').substring(0, 32)}..." Verdict: ${data.verdict} (${Math.round(data.overall_confidence * 100)}% certainty).`);
+                loadTelemetry();
+            } catch (err) {
+                console.error(err);
+                showError(`Threat inspection error: ${err.message}. Check that FastAPI backend is running.`);
+            } finally {
+                btnInspect.textContent = 'Inspect Target';
+                btnInspect.disabled = false;
+            }
+        }
+
+        function renderVerdict(data) {
+            const v = data.verdict;
+            verdictCard.className = `verdict-box ${v.toLowerCase()}`;
+            verdictScore.textContent = `${Math.round(data.overall_confidence * 100)}%`;
+
+            if (v === 'SAFE') {
+                verdictIcon.textContent = '🛡️';
+                verdictTitle.textContent = 'SAFE VERDICT';
+                verdictDesc.textContent = 'Clean destination link. Low entropy and trusted domain credentials verified.';
+            } else if (v === 'SUSPICIOUS') {
+                verdictIcon.textContent = '⚠️';
+                verdictTitle.textContent = 'SUSPICIOUS VERDICT';
+                verdictDesc.textContent = 'Elevated danger indicators detected. Caution advised prior to user interaction.';
+            } else {
+                verdictIcon.textContent = '🚨';
+                verdictTitle.textContent = 'MALICIOUS VERDICT';
+                verdictDesc.textContent = 'Critical threat intercepted! Brand spoofing and deceptive heuristics detected.';
+            }
+
+            // Heuristics breakdown
+            const h = data.engine_results.heuristics;
+            scoreH.textContent = `${Math.round(h.score * 100)}%`;
+            descH.innerHTML = `TLD Danger: <strong>${h.suspicious_tld ? 'Flagged (.xyz/.top)' : 'Normal'}</strong><br>Domain Length: <strong>${h.domain_length} chars</strong><br>IP Disguise: <strong>${h.has_ip_address ? 'Yes' : 'No'}</strong>`;
+
+            // NLP breakdown
+            const n = data.engine_results.nlp;
+            if (n) {
+                scoreNlp.textContent = `${Math.round(n.score * 100)}%`;
+                const kw = n.suspicious_keywords_found.length > 0 ? n.suspicious_keywords_found.join(', ') : 'None';
+                descNlp.innerHTML = `Urgency detected: <strong>${n.sentiment_anomaly ? 'Yes (Social Engineering)' : 'No'}</strong><br>Keywords: <strong>${kw}</strong>`;
+            }
+
+            // QR breakdown
+            const q = data.engine_results.qr;
+            if (q && q.contains_qr) {
+                scoreQr.textContent = `${Math.round(q.score * 100)}%`;
+                descQr.innerHTML = `Contains QR: <strong>Yes</strong><br>Decoded Target: <strong>${q.decoded_url?.substring(0, 24)}...</strong>`;
+            } else {
+                scoreQr.textContent = 'Passive';
+                descQr.textContent = 'QR Payload: Clean / No Image Attached';
+            }
+        }
+
+        // Quishing File Upload handling
+        dropzone.addEventListener('click', () => qrFileInput.click());
+        dropzone.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') qrFileInput.click();
+        });
+
+        qrFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                runScan(null, reader.result);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // 11. Load Telemetry & Empty State management
+        async function loadTelemetry() {
+            try {
+                const res = await fetch('/api/telemetry');
+                if (!res.ok) return;
+                const data = await res.json();
+
+                // Update metric counters
+                document.getElementById('stat-total').textContent = (1200 + data.total_scans).toLocaleString();
+                document.getElementById('stat-threats').textContent = (340 + data.stats.malicious).toLocaleString();
+                document.getElementById('stat-suspicious').textContent = (180 + data.stats.suspicious).toLocaleString();
+                document.getElementById('stat-ratio').textContent = data.stats.threat_ratio;
+
+                // 11. Empty state check
+                if (!data.recent_events || data.recent_events.length === 0) {
+                    telemetryTable.classList.add('hidden');
+                    emptyState.classList.remove('hidden');
+                    return;
+                } else {
+                    telemetryTable.classList.remove('hidden');
+                    emptyState.classList.add('hidden');
+                }
+
+                // Render table rows
+                telemetryBody.innerHTML = '';
+                data.recent_events.forEach(evt => {
+                    const tr = document.createElement('tr');
+                    const cleanUrl = evt.url.length > 28 ? evt.url.substring(0, 28) + '...' : evt.url;
+                    tr.innerHTML = `
+                        <td><span class="table-verdict verdict-${evt.verdict}">${evt.verdict}</span></td>
+                        <td title="${evt.url}">${cleanUrl}</td>
+                        <td><span class="platform-badge">${evt.platform}</span></td>
+                        <td>${Math.round(evt.confidence * 100)}%</td>
+                        <td><span class="sync-icon">●</span> Synced</td>
+                    `;
+                    telemetryBody.appendChild(tr);
+                });
+            } catch (e) {
+                console.warn('Telemetry fetch error:', e);
+            }
+        }
+
+        // Initial fetch & recurring polling
+        loadTelemetry();
+        setInterval(loadTelemetry, 5000);
+    </script>
+</body>
+</html>

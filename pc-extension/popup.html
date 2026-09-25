@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="PhishShield PC Edge Extension — Active tab URL heuristic check, NLP brand spoofing detection, and threat neutralization.">
+    <title>PhishShield PC Edge — Real-Time Link Scanner</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="styles.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="card">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo-container">
+                <div class="logo-shield-wrap">
+                    <div class="logo-shield"></div>
+                    <div class="shield-pulse"></div>
+                </div>
+                <div class="logo-meta">
+                    <h1 class="logo-text">Phish<span>Shield</span></h1>
+                    <span class="sub-label">ACTIVE EDGE V1.0</span>
+                </div>
+            </div>
+            <div class="badge-status" id="engine-status">
+                <span class="status-dot"></span>
+                <span>ONLINE</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="content">
+            <!-- Active Tab URL Card -->
+            <div class="url-card">
+                <div class="url-header">
+                    <span class="label">ACTIVE TAB TARGET</span>
+                    <span class="protocol-badge" id="protocol-badge">HTTPS</span>
+                </div>
+                <div id="target-url" class="url-text">Loading active tab URL...</div>
+            </div>
+
+            <!-- Quick Test Vector Selector -->
+            <div class="quick-vectors-wrap">
+                <span class="vector-label">TEST VECTORS:</span>
+                <div class="vector-chips">
+                    <button class="chip-btn" data-url="https://signin.paypal-account-security-update.xyz/login">PayPal Spoof</button>
+                    <button class="chip-btn" data-url="https://netflix-billing-verify.top/auth">Netflix Phish</button>
+                    <button class="chip-btn" data-url="https://github.com/phishshield/project">Safe Domain</button>
+                </div>
+            </div>
+
+            <!-- Scan Action Button -->
+            <button id="scan-btn" class="scan-button">
+                <span id="btn-text">Deep Scan Link</span>
+                <div id="btn-spinner" class="spinner hidden"></div>
+            </button>
+
+            <!-- Results Section -->
+            <div id="results-panel" class="results-panel hidden">
+                <div class="verdict-banner" id="verdict-banner">
+                    <div class="verdict-left">
+                        <span class="verdict-icon" id="verdict-icon">🛡️</span>
+                        <span id="verdict-status">VERDICT</span>
+                    </div>
+                    <span id="verdict-confidence" class="verdict-confidence">Confidence: --%</span>
+                </div>
+
+                <!-- Threat Breakdown Accordion Cards -->
+                <div class="details-list">
+                    <!-- Heuristics Card -->
+                    <div class="detail-item" id="detail-heuristics">
+                        <div class="detail-title">
+                            <span class="title-with-icon">
+                                <span class="module-icon">⚡</span>
+                                <span>URL Heuristics</span>
+                            </span>
+                            <span id="heuristics-score" class="score-badge">--</span>
+                        </div>
+                        <div class="detail-desc" id="heuristics-desc">Checking domain length, TLD, and format.</div>
+                    </div>
+
+                    <!-- NLP Brand Guard Card -->
+                    <div class="detail-item" id="detail-nlp">
+                        <div class="detail-title">
+                            <span class="title-with-icon">
+                                <span class="module-icon">🔍</span>
+                                <span>Brand & Urgency NLP</span>
+                            </span>
+                            <span id="nlp-score" class="score-badge">--</span>
+                        </div>
+                        <div class="detail-desc" id="nlp-desc">Checking brand spoofing distance and urgency signals.</div>
+                    </div>
+                </div>
+
+                <!-- Interstitial Warning Trigger Preview -->
+                <div id="block-preview-box" class="block-preview-box hidden">
+                    <span class="block-alert-text">⚠️ Confirmed Threat Triggered</span>
+                    <button id="btn-view-block" class="btn-view-block">Open Interstitial Warning Block</button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="telemetry-badge">
+                <span class="telemetry-icon"></span>
+                <span>MongoDB Cloud Active</span>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <a href="mailto:security@phishshield.org" title="Email SOC Incident Response" style="color: var(--text-secondary); text-decoration: none; font-size: 0.8rem;">✉️</a>
+                <a href="tel:+18005557447" title="Call SOC Hotline" style="color: var(--text-secondary); text-decoration: none; font-size: 0.8rem;">📞</a>
+                <a href="http://localhost:8000/dashboard" target="_blank" class="web-soc-link">Web SOC ↗</a>
+            </div>
+        </footer>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

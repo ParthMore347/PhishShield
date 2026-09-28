@@ -3,9 +3,12 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  // Use localhost for Web/Chrome, 10.0.2.2 for Android emulator
+  static const String cloudBackendUrl =
+      'https://phishshield-api-y0hd.onrender.com';
+
+  // Use localhost for Web/Chrome during local dev, and Render Cloud backend for Mobile devices
   static String get _defaultBaseUrl =>
-      kIsWeb ? 'http://localhost:8000' : 'http://10.0.2.2:8000';
+      kIsWeb ? 'http://localhost:8000' : cloudBackendUrl;
   static String get _configuredBaseUrl {
     const fromEnv = String.fromEnvironment('PHISHSHIELD_API_URL');
     return fromEnv.isNotEmpty ? fromEnv : _defaultBaseUrl;

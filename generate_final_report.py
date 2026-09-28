@@ -111,11 +111,11 @@ def create_final_report_docx(output_path):
     add_p("BACHELOR OF SCIENCE (COMPUTER SCIENCE)", align=WD_ALIGN_PARAGRAPH.CENTER, bold=True, size=14, space_after=20)
     
     add_p("Submitted By", align=WD_ALIGN_PARAGRAPH.CENTER, size=12, space_after=4)
-    add_p("Mr. Hardik Prakash Kotawdekar", align=WD_ALIGN_PARAGRAPH.CENTER, bold=True, size=13, space_after=2)
-    add_p("Seat No: BSCS / IV-2526/6125 (Roll No: 54)", align=WD_ALIGN_PARAGRAPH.CENTER, bold=True, size=12, space_after=18)
+    add_p("Mr. Parth Vikas More", align=WD_ALIGN_PARAGRAPH.CENTER, bold=True, size=13, space_after=2)
+    add_p("Roll No: 66 (Seat No: BSCS / IV-2526/6145)", align=WD_ALIGN_PARAGRAPH.CENTER, bold=True, size=12, space_after=18)
 
     add_p("Under the Esteemed Guidance of", align=WD_ALIGN_PARAGRAPH.CENTER, size=12, space_after=4)
-    add_p("Mrs. Bindy Wilson", align=WD_ALIGN_PARAGRAPH.CENTER, bold=True, size=13, space_after=2)
+    add_p("Mrs. Priti Chopade", align=WD_ALIGN_PARAGRAPH.CENTER, bold=True, size=13, space_after=2)
     add_p("Assistant Professor", align=WD_ALIGN_PARAGRAPH.CENTER, size=12, space_after=24)
 
     add_p("DEPARTMENT OF INFORMATION TECHNOLOGY & COMPUTER SCIENCE", align=WD_ALIGN_PARAGRAPH.CENTER, bold=True, size=12, space_after=6)
@@ -144,12 +144,15 @@ def create_final_report_docx(output_path):
     r = p.add_run("“PhishShield: Multi-Source Phishing Detection System”")
     r.bold = True
     p.add_run(", is a bonafide work of ")
-    r2 = p.add_run("Mr. Hardik Prakash Kotawdekar")
+    r2 = p.add_run("Mr. Parth Vikas More")
     r2.bold = True
-    p.add_run(" bearing Seat No: ")
-    r3 = p.add_run("BSCS/IV-2526/6125")
+    p.add_run(" bearing Roll No: ")
+    r3 = p.add_run("66")
     r3.bold = True
-    p.add_run(" submitted in partial fulfilment of the requirements for the award of degree of ")
+    p.add_run(" (Seat No: ")
+    r3b = p.add_run("BSCS/IV-2526/6145")
+    r3b.bold = True
+    p.add_run(") submitted in partial fulfilment of the requirements for the award of degree of ")
     r4 = p.add_run("BACHELOR OF SCIENCE in COMPUTER SCIENCE")
     r4.bold = True
     p.add_run(" from Keraleeya Samajam (Regd.) Dombivli’s Model College (Empowered Autonomous).")
@@ -157,7 +160,7 @@ def create_final_report_docx(output_path):
     # Signatures
     t_sig = doc.add_table(rows=2, cols=3)
     t_sig.alignment = WD_TABLE_ALIGNMENT.CENTER
-    t_sig.rows[0].cells[0].paragraphs[0].text = "____________________\nInternal Guide\n(Mrs. Bindy Wilson)"
+    t_sig.rows[0].cells[0].paragraphs[0].text = "____________________\nInternal Guide\n(Mrs. Priti Chopade)"
     t_sig.rows[0].cells[1].paragraphs[0].text = "____________________\nCoordinator / HOD\n(Dr. Divya Premachandran)"
     t_sig.rows[0].cells[2].paragraphs[0].text = "____________________\nExternal Examiner"
     
@@ -185,8 +188,8 @@ def create_final_report_docx(output_path):
         set_cell_background(c, "EAECEE")
     
     members_data = [
-        ("1", "Hardik Prakash Kotawdekar", "54 / BSCS-IV-2526-6125"),
-        ("2", "Parth Vikas More", "74 / BSCS-IV-2526/6145"),
+        ("1", "Parth Vikas More", "66 / BSCS-IV-2526/6145"),
+        ("2", "Hardik Prakash Kotawdekar", "54 / BSCS-IV-2526-6125"),
         ("3", "Pratik Ashwini Pandey", "88 / BSCS-IV-2526-6159"),
         ("4", "Atharva Vinayak Dound", "25 / BSCS-IV-2526-6096"),
         ("5", "Atharva Mahesh Dingorkar", "22 / BSCS-IV-2526-6093")
@@ -225,7 +228,7 @@ def create_final_report_docx(output_path):
     # Acknowledgement
     add_heading_1("ACKNOWLEDGEMENT")
     add_p(
-        "It gives us immense pleasure to present our final project report on “PhishShield”. This report marks a significant milestone in our Bachelor of Science (Computer Science) curriculum. We would like to express our deepest gratitude to our faculty mentor, Mrs. Bindy Wilson, Assistant Professor, Department of Information Technology & Computer Science, for her invaluable guidance, encouragement, and insightful feedback throughout the duration of this project.",
+        "It gives us immense pleasure to present our final project report on “PhishShield”. This report marks a significant milestone in our Bachelor of Science (Computer Science) curriculum. We would like to express our deepest gratitude to our faculty mentor, Mrs. Priti Chopade, Assistant Professor, Department of Information Technology & Computer Science, for her invaluable guidance, encouragement, and insightful feedback throughout the duration of this project.",
         align=WD_ALIGN_PARAGRAPH.JUSTIFY, line_spacing=1.3, space_after=10
     )
     add_p(
@@ -236,10 +239,10 @@ def create_final_report_docx(output_path):
     # Declaration
     add_heading_1("DECLARATION")
     add_p(
-        "We hereby declare that the project report entitled “PhishShield: Multi-Source Phishing Detection System” submitted to Keraleeya Samajam (Regd.) Dombivli’s Model College (Autonomous), affiliated to the University of Mumbai, is a record of original work carried out by us under the guidance of Mrs. Bindy Wilson. This work has not been submitted to any other university or institute for the award of any degree or diploma.",
+        "We hereby declare that the project report entitled “PhishShield: Multi-Source Phishing Detection System” submitted to Keraleeya Samajam (Regd.) Dombivli’s Model College (Autonomous), affiliated to the University of Mumbai, is a record of original work carried out by us under the guidance of Mrs. Priti Chopade. This work has not been submitted to any other university or institute for the award of any degree or diploma.",
         align=WD_ALIGN_PARAGRAPH.JUSTIFY, line_spacing=1.3, space_after=28
     )
-    add_p("Hardik Prakash Kotawdekar\nSeat No: BSCS/IV-2526/6125\nModel College, Dombivli", bold=True, size=11)
+    add_p("Parth Vikas More\nRoll No: 66 (Seat No: BSCS/IV-2526/6145)\nModel College, Dombivli", bold=True, size=11)
 
     doc.add_page_break()
 
@@ -863,5 +866,10 @@ def create_final_report_docx(output_path):
     print(f"Successfully generated complete final report: {output_path}")
 
 if __name__ == "__main__":
-    output_docx = r"d:\PhishSheildTY\phishshield\PhishShield_Final_Project_Report.docx"
+    import sys
+    if len(sys.argv) > 1:
+        output_docx = sys.argv[1]
+    else:
+        output_docx = os.path.join(os.path.dirname(os.path.abspath(__file__)), "PhishShield_Final_Project_Report.docx")
     create_final_report_docx(output_docx)
+

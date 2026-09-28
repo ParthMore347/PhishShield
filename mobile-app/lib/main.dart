@@ -3,13 +3,21 @@ import 'package:provider/provider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'app_themes.dart';
 import 'services/api_service.dart';
+import 'services/device_profile.dart';
+import 'widgets/terminal_diagnostics_view.dart';
+import 'widgets/tactical_score_card.dart';
+import 'widgets/cyber_radar_hero.dart';
+import 'services/tactical_haptics.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final deviceProfile = await DeviceProfileProvider.load();
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeNotifier()),
-        ChangeNotifierProvider(create: (_) => ScanHistoryProvider()),
+        ChangeNotifierProvider.value(value: ScanHistoryProvider()),
+        ChangeNotifierProvider.value(value: deviceProfile),
       ],
       child: const PhishShieldApp(),
     ),
@@ -43,56 +51,34 @@ class ScanItem {
 }
 
 class ScanHistoryProvider with ChangeNotifier {
-  final List<ScanItem> _scans = [
-    // Pre-seeded items to match the user's screenshots
-    ScanItem(
-      id: '1',
-      type: 'QR Inspector',
-      url: 'https://safe-login.com/dashboard',
-      verdict: 'SAFE',
-      confidence: 0.84,
-      date: '20 Aug 2026',
-      synced: true,
-    ),
-    ScanItem(
-      id: '2',
-      type: 'URL Guard',
-      url: 'https://my-utility-payment.net',
-      verdict: 'SAFE',
-      confidence: 0.62,
-      date: '20 Aug 2026',
-      synced: true,
-    ),
-    ScanItem(
-      id: '3',
-      type: 'QR Inspector',
-      url: 'https://official-government-portal.org',
-      verdict: 'SAFE',
-      confidence: 0.96,
-      date: '20 Aug 2026',
-      synced: true,
-    ),
-    ScanItem(
-      id: '4',
-      type: 'Smishing Detector',
-      url: 'https://security-alert-paypal-login.com',
-      verdict: 'MALICIOUS',
-      confidence: 0.91,
-      date: '20 Aug 2026',
-      synced: false, // "Pending" state
-    ),
-    ScanItem(
-      id: '5',
-      type: 'URL Guard',
-      url: 'https://verification-needed-netflix.com',
-      verdict: 'SUSPICIOUS',
-      confidence: 0.82,
-      date: '20 Aug 2026',
-      synced: true,
-    ),
-  ];
+  final List<ScanItem> _scans = [];
 
   List<ScanItem> get scans => List.from(_scans.reversed);
+
+  void replaceFromTelemetry(List<Map<String, dynamic>> events) {
+    _scans
+      ..clear()
+      ..addAll(events.map((event) {
+        final timestamp = DateTime.tryParse('${event['timestamp'] ?? ''}');
+        final inputType = event['input_type']?.toString();
+        final platform = event['platform']?.toString();
+        return ScanItem(
+          id: event['scan_id']?.toString() ?? '',
+          type: platform == 'mobile_qr'
+              ? 'QR Inspector'
+              : inputType == 'text'
+                  ? 'Smishing Detector'
+                  : 'URL Guard',
+          url: event['url']?.toString() ?? 'Unknown target',
+          verdict: event['verdict']?.toString() ?? 'UNKNOWN',
+          confidence: (event['confidence'] as num?)?.toDouble() ?? 0,
+          date: timestamp == null ? 'Unknown date' : _formatDate(timestamp),
+          synced: event['synced'] == true,
+          details: event,
+        );
+      }));
+    notifyListeners();
+  }
 
   void addScan({
     required String type,
@@ -117,7 +103,10 @@ class ScanHistoryProvider with ChangeNotifier {
   }
 
   String _formatCurrentDate() {
-    final now = DateTime.now();
+    return _formatDate(DateTime.now());
+  }
+
+  String _formatDate(DateTime date) {
     final months = [
       'Jan',
       'Feb',
@@ -132,7 +121,7 @@ class ScanHistoryProvider with ChangeNotifier {
       'Nov',
       'Dec'
     ];
-    return '${now.day} ${months[now.month - 1]} ${now.year}';
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 }
 
@@ -184,9 +173,22 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
-  // Screens: welcome, home, url_guard, qr_inspector, smishing, history, search, notifications
+  // Screens: welcome, home, url_guard, qr_inspector, smishing, history, profile, search, notifications
   String _currentScreen = 'welcome';
   final List<String> _navigationStack = ['welcome'];
+
+  Future<void> _loadDeviceHistory() async {
+    final profile = context.read<DeviceProfileProvider>();
+    final telemetry =
+        await ApiService().getTelemetry(deviceId: profile.deviceId);
+    if (!mounted || telemetry['success'] != true) return;
+    final events = telemetry['recent_events'];
+    if (events is List) {
+      context.read<ScanHistoryProvider>().replaceFromTelemetry(
+            events.whereType<Map<String, dynamic>>().toList(),
+          );
+    }
+  }
 
   void _navigateTo(String screenName) {
     if (_currentScreen == screenName) return;
@@ -194,6 +196,7 @@ class _AppShellState extends State<AppShell> {
       _currentScreen = screenName;
       _navigationStack.add(screenName);
     });
+    if (screenName == 'history') _loadDeviceHistory();
   }
 
   bool _handleBackPress() {
@@ -225,6 +228,8 @@ class _AppShellState extends State<AppShell> {
         return 'Search';
       case 'notifications':
         return 'Notifications';
+      case 'device_profile':
+        return 'Device Profile';
       default:
         return 'PhishShield';
     }
@@ -246,6 +251,9 @@ class _AppShellState extends State<AppShell> {
         bodyWidget = HomeScreen(
           onNavigate: _navigateTo,
         );
+        break;
+      case 'device_profile':
+        bodyWidget = const DeviceProfileScreen();
         break;
       case 'url_guard':
         bodyWidget = const UrlGuardScreen();
@@ -373,6 +381,13 @@ class AppNavigationDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final profile = context.watch<DeviceProfileProvider>();
+    final avatarIcons = {
+      'shield': Icons.shield_outlined,
+      'radar': Icons.radar,
+      'fox': Icons.pets,
+      'owl': Icons.visibility,
+    };
 
     Widget buildMenuItem(String name, String screenKey) {
       final isSelected = activeScreen == screenKey;
@@ -397,8 +412,8 @@ class AppNavigationDrawer extends StatelessWidget {
     return Drawer(
       backgroundColor: theme.scaffoldBackgroundColor,
       child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -406,34 +421,49 @@ class AppNavigationDrawer extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
+                  Expanded(
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 17,
+                          backgroundColor:
+                              theme.colorScheme.primary.withValues(alpha: 0.15),
+                          child: Icon(
+                            avatarIcons[profile.avatarId] ??
+                                Icons.shield_outlined,
+                            size: 19,
                             color: theme.colorScheme.primary,
-                            width: 1.5,
                           ),
                         ),
-                        child: Icon(
-                          Icons.shield_outlined,
-                          size: 18,
-                          color: theme.colorScheme.primary,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'PhishShield',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.0,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                profile.nickname,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.65),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'PhishShield',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.0,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close, size: 28),
@@ -441,7 +471,7 @@ class AppNavigationDrawer extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 48),
+              const SizedBox(height: 24),
 
               // Menu Links
               buildMenuItem('Home', 'home'),
@@ -449,18 +479,15 @@ class AppNavigationDrawer extends StatelessWidget {
               buildMenuItem('QR Inspector', 'qr_inspector'),
               buildMenuItem('Smishing Detector', 'smishing'),
               buildMenuItem('History', 'history'),
+              buildMenuItem('Device Profile', 'device_profile'),
 
-              const Spacer(),
+              const SizedBox(height: 16),
 
-              // Bottom Authentication Buttons
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: OutlinedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _showAuthDialog(context, isSignUp: false);
-                  },
+                  onPressed: () => onNavigate('device_profile'),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(
                       color: isDark ? Colors.white30 : Colors.black26,
@@ -471,28 +498,11 @@ class AppNavigationDrawer extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    'Login',
+                    'Edit device profile',
                     style: TextStyle(
                       color: theme.colorScheme.onSurface,
                       fontWeight: FontWeight.bold,
                     ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _showAuthDialog(context, isSignUp: true);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: const Text(
-                    'Sign up',
-                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -505,81 +515,135 @@ class AppNavigationDrawer extends StatelessWidget {
   }
 }
 
-Future<void> _showAuthDialog(
-  BuildContext context, {
-  required bool isSignUp,
-}) {
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-  final nameController = TextEditingController();
-  final formKey = GlobalKey<FormState>();
+class DeviceProfileScreen extends StatefulWidget {
+  const DeviceProfileScreen({super.key});
 
-  return showDialog<void>(
-    context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: Text(isSignUp ? 'Create your account' : 'Welcome back'),
-      content: Form(
-        key: formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isSignUp)
-                TextFormField(
-                  controller: nameController,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(labelText: 'Name'),
-                  validator: (value) =>
-                      value == null || value.trim().isEmpty
-                          ? 'Enter your name'
-                          : null,
-                ),
-              TextFormField(
-                controller: emailController,
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(labelText: 'Email'),
-                validator: (value) {
-                  final email = value?.trim() ?? '';
-                  return email.contains('@') ? null : 'Enter a valid email';
-                },
-              ),
-              TextFormField(
-                controller: passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'Password'),
-                validator: (value) => (value?.length ?? 0) < 6
-                    ? 'Use at least 6 characters'
-                    : null,
-              ),
-            ],
+  @override
+  State<DeviceProfileScreen> createState() => _DeviceProfileScreenState();
+}
+
+class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
+  late final TextEditingController _nicknameController;
+  late String _avatarId;
+
+  static const avatarIcons = {
+    'shield': Icons.shield_outlined,
+    'radar': Icons.radar,
+    'fox': Icons.pets,
+    'owl': Icons.visibility,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    final profile = context.read<DeviceProfileProvider>();
+    _nicknameController = TextEditingController(text: profile.nickname);
+    _avatarId = profile.avatarId;
+  }
+
+  @override
+  void dispose() {
+    _nicknameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveProfile() async {
+    try {
+      await context.read<DeviceProfileProvider>().update(
+            nickname: _nicknameController.text,
+            avatarId: _avatarId,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Device profile saved on this phone.')),
+      );
+    } on ArgumentError catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(error.message?.toString() ?? 'Invalid profile.')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final profile = context.watch<DeviceProfileProvider>();
+    return ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        Center(
+          child: CircleAvatar(
+            radius: 42,
+            backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.15),
+            child: Icon(
+              avatarIcons[_avatarId] ?? Icons.shield_outlined,
+              size: 42,
+              color: theme.colorScheme.primary,
+            ),
           ),
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(dialogContext),
-          child: const Text('Cancel'),
+        const SizedBox(height: 28),
+        TextField(
+          controller: _nicknameController,
+          maxLength: 40,
+          decoration: const InputDecoration(
+            labelText: 'Device nickname',
+            hintText: 'e.g. Parth’s phone',
+            border: OutlineInputBorder(),
+          ),
         ),
-        ElevatedButton(
-          onPressed: () {
-            if (!formKey.currentState!.validate()) return;
-            Navigator.pop(dialogContext);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  isSignUp
-                      ? 'Account created locally. Connect an auth service to enable sync.'
-                      : 'Login details accepted locally. Connect an auth service to enable account access.',
+        const SizedBox(height: 16),
+        DropdownButtonFormField<String>(
+          initialValue: _avatarId,
+          decoration: const InputDecoration(
+            labelText: 'Avatar',
+            border: OutlineInputBorder(),
+          ),
+          items: avatarIcons.entries
+              .map(
+                (entry) => DropdownMenuItem(
+                  value: entry.key,
+                  child: Row(
+                    children: [
+                      Icon(entry.value),
+                      const SizedBox(width: 12),
+                      Text(entry.key[0].toUpperCase() + entry.key.substring(1)),
+                    ],
+                  ),
                 ),
-              ),
-            );
+              )
+              .toList(),
+          onChanged: (value) {
+            if (value != null) setState(() => _avatarId = value);
           },
-          child: Text(isSignUp ? 'Sign up' : 'Login'),
+        ),
+        const SizedBox(height: 24),
+        SelectableText(
+          'Device ID: ${profile.deviceId}',
+          style: TextStyle(
+            fontSize: 12,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
+          ),
+        ),
+        const SizedBox(height: 24),
+        FilledButton.icon(
+          onPressed: _saveProfile,
+          icon: const Icon(Icons.save_outlined),
+          label: const Text('Save device profile'),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'This profile identifies this phone only. No account or password is used. '
+          'Its ID, nickname, and avatar are attached to scans saved in Atlas.',
+          style: TextStyle(
+            fontSize: 13,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
+          ),
         ),
       ],
-    ),
-  );
+    );
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -615,59 +679,8 @@ class WelcomeScreen extends StatelessWidget {
             ),
             child: Column(
               children: [
-                // Simulated glowing radar/HUD graphic
-                Center(
-                  child: SizedBox(
-                    width: 200,
-                    height: 200,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Container(
-                          width: 180,
-                          height: 180,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: theme.colorScheme.primary
-                                  .withValues(alpha: 0.15),
-                              width: 1,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          width: 130,
-                          height: 130,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: theme.colorScheme.primary
-                                  .withValues(alpha: 0.25),
-                              width: 1.5,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: theme.colorScheme.primary
-                                  .withValues(alpha: 0.4),
-                              width: 2,
-                            ),
-                          ),
-                        ),
-                        Icon(
-                          Icons.radar,
-                          size: 40,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                // Dynamic Animated Cyber Radar Dial
+                const CyberRadarHero(size: 215),
                 const SizedBox(height: 40),
                 Text(
                   'Turn suspicious\nsignals into\nsafer decisions',
@@ -1160,6 +1173,8 @@ class _UrlGuardScreenState extends State<UrlGuardScreen> {
     final url = directUrl ?? _urlController.text.trim();
     if (url.isEmpty) return;
 
+    TacticalHaptics.triggerScan();
+
     if (directUrl != null) {
       _urlController.text = url;
     }
@@ -1171,66 +1186,164 @@ class _UrlGuardScreenState extends State<UrlGuardScreen> {
 
     final history = Provider.of<ScanHistoryProvider>(context, listen: false);
 
-    // Call actual backend API
-    final response = await _apiService.scanLink(url);
+    final stopwatch = Stopwatch()..start();
+    final response = await _apiService.scanLink(
+      url,
+      deviceProfile: context.read<DeviceProfileProvider>().scanMetadata,
+    );
+    final elapsed = stopwatch.elapsedMilliseconds;
+    if (elapsed < 1100) {
+      await Future.delayed(Duration(milliseconds: 1100 - elapsed));
+    }
+    if (!mounted) return;
+
+    final verdict = response['verdict'] ?? 'ERROR';
+    TacticalHaptics.triggerVerdict(verdict);
 
     setState(() {
       _isLoading = false;
-      if (response['verdict'] == 'OFFLINE' || response['success'] == false) {
-        // Mock logic if backend server is not running
-        final dummyVerdict = _generateMockVerdict(url);
-        final double dummyConf = _generateMockConfidence(url);
-
-        _lastScanDetails = {
-          'url': url,
-          'verdict': dummyVerdict,
-          'overall_confidence': dummyConf,
-          'engine_results': {
-            'heuristics': {'score': dummyConf * 0.8},
-            'nlp': {'score': dummyConf * 0.9},
-          }
-        };
-
-        history.addScan(
-          type: 'URL Guard',
-          url: url,
-          verdict: dummyVerdict,
-          confidence: dummyConf,
-          details: _lastScanDetails,
-        );
-      } else {
-        // Real API data
-        _lastScanDetails = response;
-        history.addScan(
-          type: 'URL Guard',
-          url: url,
-          verdict: response['verdict'] ?? 'UNKNOWN',
-          confidence: (response['overall_confidence'] ?? 0.0).toDouble(),
-          details: response,
-        );
-      }
+      _lastScanDetails = response;
+      history.addScan(
+        type: 'URL Guard',
+        url: url,
+        verdict: verdict,
+        confidence: (response['overall_confidence'] as num?)?.toDouble() ?? 0,
+        synced: response['success'] == true,
+        details: response,
+      );
     });
   }
 
-  String _generateMockVerdict(String url) {
-    if (url.contains('phish') ||
-        url.contains('login-verify') ||
-        url.contains('alert')) {
-      return 'MALICIOUS';
-    }
-    if (url.contains('utility') ||
-        url.contains('netflix') ||
-        url.contains('verify')) {
-      return 'SUSPICIOUS';
-    }
-    return 'SAFE';
+  void _showScoringStandardDialog(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final dialogBg = theme.cardTheme.color ?? theme.colorScheme.surface;
+    final primaryColor = theme.colorScheme.primary;
+    final textColor = theme.colorScheme.onSurface;
+    final subtextColor = textColor.withValues(alpha: 0.75);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: dialogBg,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: isDark ? primaryColor.withValues(alpha: 0.3) : const Color(0xFFCBD5E1),
+            width: 1,
+          ),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: primaryColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(Icons.shield_outlined, color: primaryColor, size: 22),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'PhishShield Threat Scoring Standard',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: textColor),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Standardized deterministic 0 to 100 Multi-Vector Threat Index (PTSS):',
+                style: TextStyle(fontSize: 12, color: subtextColor),
+              ),
+              const SizedBox(height: 14),
+              // SAFE
+              _buildTierItem(
+                color: isDark ? Colors.greenAccent : const Color(0xFF16A34A),
+                label: '0% – 20% Risk: SAFE',
+                desc: 'Displayed as (100 - Risk)% Safe (e.g., 0% risk is 100% Safe, never 0%). Verified domain infrastructure, standard TLS, and clean lexical entropy.',
+                subtextColor: subtextColor,
+                isDark: isDark,
+              ),
+              const SizedBox(height: 10),
+              // SUSPICIOUS
+              _buildTierItem(
+                color: isDark ? Colors.orangeAccent : const Color(0xFFD97706),
+                label: '21% – 65% Risk: SUSPICIOUS',
+                desc: 'Displayed as Risk% Threat. Flags Dynamic DNS hosts (e.g. dpdns.org), high-risk/abusive TLDs, unverified redirects, or elevated entropy (>0.78).',
+                subtextColor: subtextColor,
+                isDark: isDark,
+              ),
+              const SizedBox(height: 10),
+              // MALICIOUS
+              _buildTierItem(
+                color: isDark ? Colors.redAccent : const Color(0xFFDC2626),
+                label: '66% – 100% Risk: MALICIOUS',
+                desc: 'Displayed as Risk% Threat. Direct brand typosquatting (e.g. paypa1), credential harvesting paths (/login, /verify), or raw IP hosts.',
+                subtextColor: subtextColor,
+                isDark: isDark,
+              ),
+              Divider(height: 24, color: theme.dividerColor.withValues(alpha: 0.3)),
+              Text(
+                'Inspected Security Modules:',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: textColor),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '• Heuristics Engine (35%): Domain length, subdomain depth, IP usage, Shannon entropy, Dynamic DNS provider registry.\n• NLP Intent Engine (40%): Semantic urgency keywords, credential harvesting tokens, brand spoofing.\n• QR Vision (25%): Decodes disguised payloads and tests redirection hop chains.',
+                style: TextStyle(fontSize: 11, color: subtextColor, height: 1.4),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(
+              'Close',
+              style: TextStyle(
+                color: isDark ? primaryColor : theme.colorScheme.secondary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  double _generateMockConfidence(String url) {
-    if (url.contains('phish')) return 0.91;
-    if (url.contains('netflix')) return 0.82;
-    if (url.contains('utility')) return 0.62;
-    return 0.74;
+  Widget _buildTierItem({
+    required Color color,
+    required String label,
+    required String desc,
+    required Color subtextColor,
+    required bool isDark,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: isDark ? 0.12 : 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: color.withValues(alpha: isDark ? 0.35 : 0.4),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),
+          const SizedBox(height: 4),
+          Text(desc, style: TextStyle(color: subtextColor, fontSize: 11, height: 1.3)),
+        ],
+      ),
+    );
   }
 
   Color _getVerdictColor(String verdict) {
@@ -1321,13 +1434,20 @@ class _UrlGuardScreenState extends State<UrlGuardScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : () => _handleScan(),
                     child: _isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
+                        ? const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Text('ANALYZING...'),
+                            ],
                           )
                         : const Text('Scan URL'),
                   ),
@@ -1336,88 +1456,74 @@ class _UrlGuardScreenState extends State<UrlGuardScreen> {
             ],
           ),
 
+          // Terminal Diagnostics loading state
+          if (_isLoading) ...[
+            const SizedBox(height: 20),
+            TerminalDiagnosticsView(
+              type: DiagnosticType.url,
+              target: _urlController.text.trim(),
+            ),
+          ],
+
           // Scan Result display card
           if (_lastScanDetails != null) ...[
             const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: theme.cardTheme.color,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: _getVerdictColor(_lastScanDetails!['verdict']),
-                  width: 1,
+            // Check for INVALID_INPUT or ERROR
+            if (_lastScanDetails!['success'] == false ||
+                _lastScanDetails!['verdict'] == 'INVALID_INPUT' ||
+                _lastScanDetails!['verdict'] == 'ERROR') ...[
+              Container(
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: theme.cardTheme.color,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.redAccent.withValues(alpha: 0.6),
+                    width: 1.5,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.error_outline_rounded,
+                            color: Colors.redAccent, size: 24),
+                        SizedBox(width: 8),
+                        Text(
+                          'Invalid Input Notice',
+                          style: TextStyle(
+                            color: Colors.redAccent,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      _lastScanDetails!['error'] ??
+                          _lastScanDetails!['message'] ??
+                          'Please provide a valid website address.',
+                      style: const TextStyle(fontSize: 13, height: 1.4),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Format example: https://example.com or example.org/stream',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        _lastScanDetails!['verdict'] ?? 'UNKNOWN',
-                        style: TextStyle(
-                          color: _getVerdictColor(_lastScanDetails!['verdict']),
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        'Confidence: ${((_lastScanDetails!['overall_confidence'] ?? 0.0) * 100).round()}%',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Target URL: ${_lastScanDetails!['url']}',
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 12,
-                    ),
-                  ),
-                  const Divider(height: 24),
-                  // Breakdown scores
-                  const Text(
-                    'Engine breakdowns:',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white10,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          'Heuristics: ${((_lastScanDetails!['engine_results']?['heuristics']?['score'] ?? 0.0) * 100).round()}%',
-                          style: const TextStyle(
-                              fontSize: 11, fontFamily: 'monospace'),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white10,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          'NLP Brand: ${((_lastScanDetails!['engine_results']?['nlp']?['score'] ?? 0.0) * 100).round()}%',
-                          style: const TextStyle(
-                              fontSize: 11, fontFamily: 'monospace'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+            ] else ...[
+              TacticalScoreCard(
+                scanDetails: _lastScanDetails!,
+                onHelpPressed: () => _showScoringStandardDialog(context),
               ),
-            ),
+            ],
           ],
 
           const SizedBox(height: 32),
@@ -1553,6 +1659,7 @@ class _QrInspectorScreenState extends State<QrInspectorScreen>
   }
 
   Future<void> _startCameraScan() async {
+    TacticalHaptics.triggerScan();
     setState(() {
       _isScanning = true;
       _scanStatus = 'Point the camera at a QR code.';
@@ -1571,61 +1678,6 @@ class _QrInspectorScreenState extends State<QrInspectorScreen>
     });
   }
 
-  Map<String, dynamic> _analyzeQrOffline(String code) {
-    final normalized = code.toLowerCase();
-    final isUrl = normalized.startsWith('http://') ||
-        normalized.startsWith('https://');
-    final signals = <String, dynamic>{};
-    var riskScore = 0.0;
-
-    if (!isUrl) {
-      signals['content_type'] = 'QR contains text or data, not a web URL';
-      riskScore += 0.10;
-    } else {
-      final uri = Uri.tryParse(code);
-      final host = uri?.host.toLowerCase() ?? '';
-      final hasHttps = uri?.scheme.toLowerCase() == 'https';
-      final suspiciousTerms = RegExp(
-        r'(login|verify|secure|account|payment|wallet|claim|urgent|update|confirm)',
-        caseSensitive: false,
-      ).hasMatch(host + (uri?.path.toLowerCase() ?? ''));
-      final hasIpHost = RegExp(r'^\d{1,3}(\.\d{1,3}){3}$').hasMatch(host);
-      final longHost = host.length > 35;
-
-      signals['https'] = hasHttps;
-      signals['domain'] = host.isEmpty ? 'Unable to parse domain' : host;
-      signals['suspicious_terms'] = suspiciousTerms;
-      signals['ip_address_host'] = hasIpHost;
-      signals['long_domain'] = longHost;
-
-      if (!hasHttps) riskScore += 0.25;
-      if (suspiciousTerms) riskScore += 0.30;
-      if (hasIpHost) riskScore += 0.25;
-      if (longHost) riskScore += 0.15;
-      if (host.isEmpty) riskScore += 0.35;
-    }
-
-    final verdict = riskScore >= 0.55
-        ? 'MALICIOUS'
-        : riskScore >= 0.25
-            ? 'SUSPICIOUS'
-            : 'SAFE';
-    final confidence = (0.60 + riskScore * 0.65).clamp(0.0, 0.98).toDouble();
-    return {
-      'success': true,
-      'source': 'offline_heuristics',
-      'url': code,
-      'verdict': verdict,
-      'overall_confidence': confidence,
-      'engine_results': {
-        'heuristics': {
-          'score': riskScore.clamp(0.0, 1.0),
-          'signals': signals,
-        },
-      },
-    };
-  }
-
   Future<void> _handleDetectedCode(BarcodeCapture capture) async {
     if (_isProcessingResult) return;
 
@@ -1636,6 +1688,11 @@ class _QrInspectorScreenState extends State<QrInspectorScreen>
         .firstWhere((value) => value.isNotEmpty, orElse: () => '');
     if (code.isEmpty) return;
 
+    TacticalHaptics.triggerScan();
+
+    final history = Provider.of<ScanHistoryProvider>(context, listen: false);
+    final deviceProfile = context.read<DeviceProfileProvider>().scanMetadata;
+    deviceProfile['platform'] = 'mobile_qr';
     _isProcessingResult = true;
     if (mounted) {
       setState(() {
@@ -1648,17 +1705,27 @@ class _QrInspectorScreenState extends State<QrInspectorScreen>
       _isScanning = false;
     });
 
-    final serverResponse = await _apiService.scanLink(code);
+    final stopwatch = Stopwatch()..start();
+    final isUrl = Uri.tryParse(code)?.hasAuthority == true;
+    final serverResponse = isUrl
+        ? await _apiService.scanLink(code, deviceProfile: deviceProfile)
+        : await _apiService.scanText(code, deviceProfile: deviceProfile);
+
+    final elapsed = stopwatch.elapsedMilliseconds;
+    if (elapsed < 1100) {
+      await Future.delayed(Duration(milliseconds: 1100 - elapsed));
+    }
     if (!mounted) return;
 
-    final isOnline = serverResponse['success'] == true &&
-        serverResponse['verdict'] != null &&
-        serverResponse['verdict'] != 'OFFLINE';
-    final response =
-        isOnline ? serverResponse : _analyzeQrOffline(code);
-    final verdict = (response['verdict'] as String?) ?? 'UNKNOWN';
-    final confidence = (response['overall_confidence'] as num?)?.toDouble() ?? 0.0;
-    final history = Provider.of<ScanHistoryProvider>(context, listen: false);
+    final isOnline =
+        serverResponse['success'] == true && serverResponse['verdict'] != null;
+    final response = serverResponse;
+    final verdict = (response['verdict'] as String?) ?? 'ERROR';
+    final confidence =
+        (response['overall_confidence'] as num?)?.toDouble() ?? 0.0;
+
+    TacticalHaptics.triggerVerdict(verdict);
+
     history.addScan(
       type: 'QR Inspector',
       url: code,
@@ -1668,17 +1735,36 @@ class _QrInspectorScreenState extends State<QrInspectorScreen>
       details: response,
     );
 
+    final scorePercent = (confidence * 100).round();
+    Color tierColor;
+    if (verdict == 'SAFE') {
+      tierColor = const Color(0xFF00E676);
+    } else if (verdict == 'SUSPICIOUS') {
+      tierColor = const Color(0xFFFFB300);
+    } else if (verdict == 'MALICIOUS') {
+      tierColor = const Color(0xFFFF1744);
+    } else {
+      tierColor = const Color(0xFF94A3B8);
+    }
+
     showDialog(
       context: context,
       builder: (context) {
         final theme = Theme.of(context);
         return AlertDialog(
           backgroundColor: theme.colorScheme.surface,
-          title: const Row(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: tierColor.withValues(alpha: 0.6), width: 1.5),
+          ),
+          title: Row(
             children: [
-              Icon(Icons.qr_code, color: Colors.blueAccent),
-              SizedBox(width: 12),
-              Text('QR Code Parsed'),
+              Icon(Icons.qr_code, color: tierColor),
+              const SizedBox(width: 12),
+              const Text(
+                'QR Payload Audit',
+                style: TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.bold),
+              ),
             ],
           ),
           content: Column(
@@ -1702,19 +1788,66 @@ class _QrInspectorScreenState extends State<QrInspectorScreen>
                 ),
               ),
               const SizedBox(height: 16),
+              // Animated Score Dial
+              Center(
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: 0.0, end: scorePercent.toDouble()),
+                  duration: const Duration(milliseconds: 800),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, val, child) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: tierColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: tierColor.withValues(alpha: 0.4)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: tierColor.withValues(alpha: 0.2),
+                            blurRadius: 12,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              value: (val / 100.0).clamp(0.0, 1.0),
+                              strokeWidth: 2.5,
+                              backgroundColor: tierColor.withValues(alpha: 0.2),
+                              valueColor: AlwaysStoppedAnimation<Color>(tierColor),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            verdict == 'SAFE' ? '${(100 - val.round())}% Safe' : '${val.round()}% Threat',
+                            style: TextStyle(
+                              fontFamily: 'monospace',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: tierColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(isOnline ? 'Online verdict:' : 'Offline heuristic verdict:'),
+                  Text(isOnline ? 'Verdict:' : 'Status:'),
                   Text(
                     verdict,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: verdict == 'SAFE'
-                          ? Colors.greenAccent
-                          : verdict == 'SUSPICIOUS'
-                              ? Colors.orangeAccent
-                              : Colors.redAccent,
+                      color: tierColor,
                     ),
                   ),
                 ],
@@ -1723,7 +1856,9 @@ class _QrInspectorScreenState extends State<QrInspectorScreen>
               Text(
                 isOnline
                     ? 'Threat check completed using the PhishShield engine.'
-                    : 'Server unavailable. This result was calculated locally from QR URL signals.',
+                    : (response['message'] ??
+                        response['error'] ??
+                        'The backend could not analyze this QR content.'),
                 style: TextStyle(
                   fontSize: 12,
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
@@ -1741,17 +1876,17 @@ class _QrInspectorScreenState extends State<QrInspectorScreen>
                   style: const TextStyle(fontSize: 12),
                 ),
                 ...((response['engine_results']?['heuristics']?['signals']
-                                    as Map<String, dynamic>?) ??
-                                {})
+                            as Map<String, dynamic>?) ??
+                        {})
                     .entries
                     .map(
-                              (entry) => Text(
-                                '${entry.key}: ${entry.value}',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontFamily: 'monospace',
-                                ),
-                              ),
+                      (entry) => Text(
+                        '${entry.key}: ${entry.value}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
                     ),
               ],
             ],
@@ -2070,71 +2205,36 @@ class _SmishingDetectorScreenState extends State<SmishingDetectorScreen> {
     final text = _msgController.text.trim();
     if (text.isEmpty) return;
 
+    TacticalHaptics.triggerScan();
+
     setState(() {
       _isLoading = true;
     });
 
     final history = Provider.of<ScanHistoryProvider>(context, listen: false);
 
-    // Check for links in text
     final urlRegExp = RegExp(
       r'https?://[a-zA-Z0-9\-._~:/?#\[\]@!$&()*+,;=%]+',
       caseSensitive: false,
     );
     final match = urlRegExp.firstMatch(text);
+    final target = match?.group(0) ?? 'SMS message';
+    final stopwatch = Stopwatch()..start();
+    final response = await _apiService.scanText(
+      text,
+      deviceProfile: context.read<DeviceProfileProvider>().scanMetadata,
+    );
 
-    String targetUrl = '';
-    String verdict = 'SAFE';
-    double confidence = 0.15;
-
-    if (match != null) {
-      targetUrl = match.group(0)!;
-      // Hit backend API to scan the URL extracted
-      final response = await _apiService.scanLink(targetUrl);
-      if (response['verdict'] != 'OFFLINE' && response['success'] != false) {
-        verdict = response['verdict'] ?? 'UNKNOWN';
-        confidence = (response['overall_confidence'] ?? 0.0).toDouble();
-      } else {
-        // Fallback simulated logic
-        if (targetUrl.contains('postal') || targetUrl.contains('phish')) {
-          verdict = 'MALICIOUS';
-          confidence = 0.91;
-        } else {
-          verdict = 'SUSPICIOUS';
-          confidence = 0.65;
-        }
-      }
-    } else {
-      // Local keyword matching
-      targetUrl = 'Text Analysis (No link)';
-      int triggerWords = 0;
-      final keywords = [
-        'urgent',
-        'verify',
-        'suspended',
-        'delivery',
-        'login',
-        'bank',
-        'win',
-        'prize'
-      ];
-      for (var word in keywords) {
-        if (text.toLowerCase().contains(word)) {
-          triggerWords++;
-        }
-      }
-
-      if (triggerWords >= 3) {
-        verdict = 'MALICIOUS';
-        confidence = 0.91;
-      } else if (triggerWords >= 1) {
-        verdict = 'SUSPICIOUS';
-        confidence = 0.55;
-      } else {
-        verdict = 'SAFE';
-        confidence = 0.12;
-      }
+    final elapsed = stopwatch.elapsedMilliseconds;
+    if (elapsed < 1100) {
+      await Future.delayed(Duration(milliseconds: 1100 - elapsed));
     }
+    if (!mounted) return;
+    final verdict = response['verdict'] ?? 'ERROR';
+    final confidence =
+        (response['overall_confidence'] as num?)?.toDouble() ?? 0.0;
+
+    TacticalHaptics.triggerVerdict(verdict);
 
     setState(() {
       _isLoading = false;
@@ -2143,17 +2243,28 @@ class _SmishingDetectorScreenState extends State<SmishingDetectorScreen> {
     // Save to global history
     history.addScan(
       type: 'Smishing Detector',
-      url: targetUrl,
+      url: target,
       verdict: verdict,
       confidence: confidence,
-      synced: false, // "Pending" sync status as seen in the screenshots
+      synced: response['success'] == true,
+      details: response,
     );
 
     // Open Custom Threat Inspector Dialog Modal
-    _showThreatInspector(verdict, confidence, targetUrl);
+    _showThreatInspector(
+      verdict,
+      confidence,
+      target,
+      errorMessage: response['error'] ?? response['message'],
+    );
   }
 
-  void _showThreatInspector(String verdict, double confidence, String url) {
+  void _showThreatInspector(
+    String verdict,
+    double confidence,
+    String url, {
+    String? errorMessage,
+  }) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -2163,128 +2274,190 @@ class _SmishingDetectorScreenState extends State<SmishingDetectorScreen> {
 
         Color mainColor;
         if (verdict == 'SAFE') {
-          mainColor = Colors.greenAccent;
+          mainColor = const Color(0xFF00E676); // Emerald
         } else if (verdict == 'SUSPICIOUS') {
-          mainColor = Colors.orangeAccent;
+          mainColor = const Color(0xFFFFB300); // Amber
+        } else if (verdict == 'MALICIOUS') {
+          mainColor = const Color(0xFFFF1744); // Crimson
         } else {
-          mainColor = Colors.redAccent;
+          mainColor = const Color(0xFF94A3B8);
         }
 
         return Dialog(
           backgroundColor: theme.colorScheme.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side:
-                BorderSide(color: mainColor.withValues(alpha: 0.3), width: 1.5),
+            side: BorderSide(color: mainColor.withValues(alpha: 0.65), width: 1.5),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Header with custom title & Close button
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Threat inspector',
-                      style: TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                const Divider(),
-                const SizedBox(height: 16),
-
-                // Percentage indicator
-                Center(
-                  child: Text(
-                    '$scorePercent%',
-                    style: TextStyle(
-                      fontSize: 48,
-                      fontWeight: FontWeight.w900,
-                      fontFamily: 'monospace',
-                      color: mainColor,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Center(
-                  child: Text(
-                    verdict,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: mainColor,
-                      letterSpacing: 1.5,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Buttons Stack
-                SizedBox(
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Domain added to system blocklist.')),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.redAccent,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('Block Domain'),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.colorScheme.secondary,
-                    ),
-                    child: const Text('Safe to Open'),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  height: 48,
-                  child: OutlinedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text(
-                                'Verdict reported to MongoDB threat intelligence.')),
-                      );
-                    },
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.white30),
-                    ),
-                    child: Text(
-                      'Report Phish',
-                      style: TextStyle(color: theme.colorScheme.onSurface),
-                    ),
-                  ),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: mainColor.withValues(alpha: 0.25),
+                  blurRadius: 24,
+                  spreadRadius: 2,
                 ),
               ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Header with custom title & Close button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.shield_outlined, color: mainColor, size: 20),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'THREAT INSPECTOR',
+                            style: TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Divider(),
+                  const SizedBox(height: 16),
+
+                  // Animated Percentage dial
+                  Center(
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween<double>(begin: 0.0, end: scorePercent.toDouble()),
+                      duration: const Duration(milliseconds: 800),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, value, child) {
+                        return Column(
+                          children: [
+                            Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 100,
+                                  height: 100,
+                                  child: CircularProgressIndicator(
+                                    value: (value / 100.0).clamp(0.0, 1.0),
+                                    strokeWidth: 5,
+                                    backgroundColor: mainColor.withValues(alpha: 0.15),
+                                    valueColor: AlwaysStoppedAnimation<Color>(mainColor),
+                                  ),
+                                ),
+                                Text(
+                                  '${value.round()}%',
+                                  style: TextStyle(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.w900,
+                                    fontFamily: 'monospace',
+                                    color: mainColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Center(
+                    child: Text(
+                      verdict,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        color: mainColor,
+                        fontSize: 18,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ),
+                  if (verdict == 'ERROR') ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      errorMessage ?? 'The backend could not analyze this message.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+
+                  // Buttons Stack
+                  if (verdict != 'ERROR')
+                    SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Domain added to system blocklist.'),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('Block Domain'),
+                      ),
+                    ),
+                  if (verdict != 'ERROR') const SizedBox(height: 10),
+                  if (verdict != 'ERROR')
+                    SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: theme.colorScheme.secondary,
+                        ),
+                        child: const Text('Safe to Open'),
+                      ),
+                    ),
+                  if (verdict != 'ERROR') const SizedBox(height: 10),
+                  if (verdict != 'ERROR')
+                    SizedBox(
+                      height: 48,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                  'Verdict reported to MongoDB threat intelligence.'),
+                            ),
+                          );
+                        },
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.white30),
+                        ),
+                        child: Text(
+                          'Report Phish',
+                          style: TextStyle(color: theme.colorScheme.onSurface),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         );
@@ -2356,13 +2529,20 @@ class _SmishingDetectorScreenState extends State<SmishingDetectorScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _handleScanMessage,
                     child: _isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
+                        ? const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Text('ANALYZING...'),
+                            ],
                           )
                         : const Text('Scan Message'),
                   ),
@@ -2370,6 +2550,17 @@ class _SmishingDetectorScreenState extends State<SmishingDetectorScreen> {
               ),
             ],
           ),
+
+          // Terminal Diagnostics loading state
+          if (_isLoading) ...[
+            const SizedBox(height: 20),
+            TerminalDiagnosticsView(
+              type: DiagnosticType.sms,
+              target: _msgController.text.trim().length > 40
+                  ? '${_msgController.text.trim().substring(0, 40)}...'
+                  : _msgController.text.trim(),
+            ),
+          ],
         ],
       ),
     );

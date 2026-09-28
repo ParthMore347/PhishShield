@@ -87,7 +87,7 @@ Ensure you have Python 3.10+ installed.
 
 ```bash
 # Navigate to the backend directory
-cd phishshield/backend
+cd backend
 
 # Create a virtual environment
 python -m venv venv
@@ -105,7 +105,7 @@ The interactive Swagger API documentation will be available at [http://localhost
 1. Open Google Chrome and go to `chrome://extensions/`.
 2. Enable **Developer Mode** using the toggle switch in the top-right corner.
 3. Click **Load unpacked** in the top-left corner.
-4. Select the `phishshield/pc-extension` directory.
+4. Select the `pc-extension` directory.
 5. Click on the PhishShield extension icon to scan the active tab link.
 
 ### 3. Launching the Flutter Mobile Client
@@ -113,7 +113,7 @@ Ensure you have the Flutter SDK installed and configured.
 
 ```bash
 # Navigate to the mobile app directory
-cd phishshield/mobile-app
+cd mobile-app
 
 # Get dependencies
 flutter pub get

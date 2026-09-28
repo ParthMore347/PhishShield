@@ -4,11 +4,11 @@ A Field Project Report submitted in partial fulfillment of the requirements for 
 **BACHELOR OF SCIENCE (COMPUTER SCIENCE)**
 
 **Submitted By:**  
-**Mr. Hardik Prakash Kotawdekar**  
-Seat No: **BSCS / IV-2526/6125** (Roll No: **54**)
+**Mr. Parth Vikas More**  
+Roll No: **66** (Seat No: **BSCS / IV-2526/6145**)
 
 **Under the Esteemed Guidance of:**  
-**Mrs. Bindy Wilson**  
+**Mrs. Priti Chopade**  
 Assistant Professor  
 Department of Information Technology & Computer Science
 
@@ -23,9 +23,9 @@ Dombivli (East), Maharashtra - 421201
 
 ## CERTIFICATE
 
-This is to certify that the project entitled, **“PhishShield: Multi-Source Phishing Detection System”**, is a bonafide work of **Mr. Hardik Prakash Kotawdekar** bearing Seat No: **BSCS/IV-2526/6125** submitted in partial fulfilment of the requirements for the award of degree of **BACHELOR OF SCIENCE in COMPUTER SCIENCE** from Keraleeya Samajam (Regd.) Dombivli’s Model College (Empowered Autonomous).
+This is to certify that the project entitled, **“PhishShield: Multi-Source Phishing Detection System”**, is a bonafide work of **Mr. Parth Vikas More** bearing Roll No: **66** (Seat No: **BSCS/IV-2526/6145**) submitted in partial fulfilment of the requirements for the award of degree of **BACHELOR OF SCIENCE in COMPUTER SCIENCE** from Keraleeya Samajam (Regd.) Dombivli’s Model College (Empowered Autonomous).
 
-- **Internal Guide:** Mrs. Bindy Wilson
+- **Internal Guide:** Mrs. Priti Chopade
 - **Coordinator / HOD:** Dr. Divya Premachandran
 - **External Examiner:** ____________________
 - **Date & College Seal:** ____________________
@@ -38,8 +38,8 @@ This is to certify that the following students of the **B.Sc. Computer Science P
 
 | Sr. No | Name of Student | Roll / Seat No |
 |---|---|---|
-| 1 | Hardik Prakash Kotawdekar | 54 / BSCS-IV-2526-6125 |
-| 2 | Parth Vikas More | 74 / BSCS-IV-2526/6145 |
+| 1 | Parth Vikas More | 66 / BSCS-IV-2526/6145 |
+| 2 | Hardik Prakash Kotawdekar | 54 / BSCS-IV-2526-6125 |
 | 3 | Pratik Ashwini Pandey | 88 / BSCS-IV-2526-6159 |
 | 4 | Atharva Vinayak Dound | 25 / BSCS-IV-2526-6096 |
 | 5 | Atharva Mahesh Dingorkar | 22 / BSCS-IV-2526-6093 |
@@ -58,9 +58,10 @@ This final project report comprehensively documents the entire development life 
 
 ## ACKNOWLEDGEMENT & DECLARATION
 
-We express our sincere thanks to all the teachers who supported us throughout this endeavor. We acknowledge the help and guidance provided by **Mrs. Bindy Wilson**, Assistant Professor, Department of IT & CS. We are thankful to our Principal, **Dr. CA Ravindra P Bambardekar**, and **Dr. Divya Premachandran**, In-charge of the IT & CS Department.
+We express our sincere thanks to all the teachers who supported us throughout this endeavor. We acknowledge the help and guidance provided by **Mrs. Priti Chopade**, Assistant Professor, Department of IT & CS. We are thankful to our Principal, **Dr. CA Ravindra P Bambardekar**, and **Dr. Divya Premachandran**, In-charge of the IT & CS Department.
 
 We declare that this report represents our original work carried out under academic guidelines at Model College Dombivli (Autonomous).
+**Parth Vikas More** (Roll No: 66)
 
 ---
 

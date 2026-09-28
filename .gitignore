@@ -30,7 +30,10 @@ mobile-app/android/local.properties
 *.iml
 .cxx/
 
-# Local reports and temporary Office files
+# Local report documents and screenshots (markdown reports are kept)
+*.docx
+*.pdf
+screenshots/
 ~$*
 *.tmp
 *.log

@@ -16,7 +16,7 @@ from app.services.database import database_service
 async def lifespan(app: FastAPI):
     try:
         await database_service.connect()
-    except PyMongoError:
+    except (PyMongoError, TimeoutError):
         # Keep local scanning available while exposing the failed persistence state
         # through the telemetry endpoint and application logs.
         pass

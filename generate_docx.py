@@ -88,11 +88,11 @@ def create_report_docx(filename):
     add_p("BACHELOR OF SCIENCE (COMPUTER SCIENCE)", align=WD_ALIGN_PARAGRAPH.CENTER, bold=True, size=14, space_after=24)
     
     add_p("By", align=WD_ALIGN_PARAGRAPH.CENTER, size=12, space_after=6)
-    add_p("Mr. Hardik Prakash Kotawdekar", align=WD_ALIGN_PARAGRAPH.CENTER, bold=True, size=13, space_after=2)
-    add_p("BSCS / IV-2526/6125", align=WD_ALIGN_PARAGRAPH.CENTER, bold=True, size=12, space_after=24)
+    add_p("Mr. Parth Vikas More", align=WD_ALIGN_PARAGRAPH.CENTER, bold=True, size=13, space_after=2)
+    add_p("Roll No: 66 (Seat No: BSCS / IV-2526/6145)", align=WD_ALIGN_PARAGRAPH.CENTER, bold=True, size=12, space_after=24)
 
     add_p("Under the esteemed guidance of", align=WD_ALIGN_PARAGRAPH.CENTER, size=12, space_after=6)
-    add_p("Mrs. Bindy Wilson", align=WD_ALIGN_PARAGRAPH.CENTER, bold=True, size=13, space_after=2)
+    add_p("Mrs. Priti Chopade", align=WD_ALIGN_PARAGRAPH.CENTER, bold=True, size=13, space_after=2)
     add_p("Assistant Professor", align=WD_ALIGN_PARAGRAPH.CENTER, size=12, space_after=36)
 
     add_p("DEPARTMENT OF INFORMATION TECHNOLOGY & COMPUTER SCIENCE", align=WD_ALIGN_PARAGRAPH.CENTER, bold=True, size=12, space_after=18)
@@ -118,12 +118,15 @@ def create_report_docx(filename):
     r = p.add_run("“PhishShield”")
     r.bold = True
     p.add_run(", is bonafied work of ")
-    r = p.add_run("Mr. Hardik Prakash Kotawdekar")
+    r = p.add_run("Mr. Parth Vikas More")
     r.bold = True
-    p.add_run(" bearing Seat No: ")
-    r = p.add_run("BSCS/IV-2526/6125")
+    p.add_run(" bearing Roll No: ")
+    r = p.add_run("66")
     r.bold = True
-    p.add_run(" submitted in partial fulfilment of the requirements for the award of degree of ")
+    p.add_run(" (Seat No: ")
+    r = p.add_run("BSCS/IV-2526/6145")
+    r.bold = True
+    p.add_run(") submitted in partial fulfilment of the requirements for the award of degree of ")
     r = p.add_run("BACHELOR OF SCIENCE in COMPUTER SCIENCE")
     r.bold = True
     p.add_run(" from Keraleeya Samajam (Regd.) Dombivli’s Model College.")
@@ -173,8 +176,8 @@ def create_report_docx(filename):
     table_m.alignment = WD_TABLE_ALIGNMENT.CENTER
     headers = ["Sr. No", "Name", "Roll/Seat No"]
     data_members = [
-        ("1", "Hardik Prakash Kotawdekar", "54 / BSCS-IV-2526-6125"),
-        ("2", "Parth Vikas More", "74 / BSCS-IV-2526/6145"),
+        ("1", "Parth Vikas More", "66 / BSCS-IV-2526/6145"),
+        ("2", "Hardik Prakash Kotawdekar", "54 / BSCS-IV-2526-6125"),
         ("3", "Pratik Ashwini Pandey", "88 / BSCS-IV-2526-6159"),
         ("4", "Atharva Vinayak Dound", "25 / BSCS-IV-2526-6096"),
         ("5", "Atharva Mahesh Dingorkar", "22 / BSCS-IV-2526-6093"),
@@ -200,7 +203,7 @@ def create_report_docx(filename):
     add_p("", space_after=24)
     t_sig2 = doc.add_table(rows=1, cols=2)
     t_sig2.alignment = WD_TABLE_ALIGNMENT.CENTER
-    t_sig2.cell(0,0).paragraphs[0].text = "Internal Guide"
+    t_sig2.cell(0,0).paragraphs[0].text = "Internal Guide\n(Mrs. Priti Chopade)"
     t_sig2.cell(0,1).paragraphs[0].text = "Head of the Dept/Principal"
     t_sig2.cell(0,1).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
 
@@ -217,7 +220,7 @@ def create_report_docx(filename):
 
     # --- ACKNOWLEDGEMENT ---
     add_heading_1("ACKNOWLEDGEMENT")
-    add_p("It gives us a pleasure to present our project on “PhishShield”. This is our milestone in Bachelor of Science (Computer Science). We would like to express our sincere thanks to all the teachers who helped us throughout the project. We would like to acknowledge the help and guidance provided by Mrs. Bindy Wilson, Assistant Professor in all places during the presentation of this project.", align=WD_ALIGN_PARAGRAPH.JUSTIFY, space_after=12)
+    add_p("It gives us a pleasure to present our project on “PhishShield”. This is our milestone in Bachelor of Science (Computer Science). We would like to express our sincere thanks to all the teachers who helped us throughout the project. We would like to acknowledge the help and guidance provided by Mrs. Priti Chopade, Assistant Professor in all places during the presentation of this project.", align=WD_ALIGN_PARAGRAPH.JUSTIFY, space_after=12)
     add_p("We are thankful to our honorable Principal Dr. CA Ravindra P Bambardekar towards our project works. We are also thankful to the staff members of the IT-CS department for their moral support. We extend our gratitude to Dr. Divya Premachandran, In-charge of IT & CS Department for her support and guidance.", align=WD_ALIGN_PARAGRAPH.JUSTIFY, space_after=24)
 
     doc.add_page_break()
@@ -227,7 +230,7 @@ def create_report_docx(filename):
     add_p("We hereby declare that the project entitled, “PhishShield” done at Keraleeya Samajam (Regd.) Dombivli’s Model College (Autonomous), has not been in any case duplicated to submit to any other university for the award of any degree. To the best of our knowledge other than us, no one has submitted to any other university.", align=WD_ALIGN_PARAGRAPH.JUSTIFY, space_after=12)
     add_p("The project is done in partial fulfilment of the requirements for the award of degree of BACHELOR OF SCIENCE (COMPUTER SCIENCE) to be submitted as a IV semester project as part of our curriculum.", align=WD_ALIGN_PARAGRAPH.JUSTIFY, space_after=36)
 
-    add_p("Hardik Prakash Kotawdekar", align=WD_ALIGN_PARAGRAPH.RIGHT, bold=True)
+    add_p("Parth Vikas More (Roll No: 66)", align=WD_ALIGN_PARAGRAPH.RIGHT, bold=True)
     add_p("Name of Student", align=WD_ALIGN_PARAGRAPH.RIGHT)
     add_p("Sign", align=WD_ALIGN_PARAGRAPH.RIGHT, space_after=24)
 
@@ -312,11 +315,11 @@ def create_report_docx(filename):
     t_p1 = doc.add_table(rows=8, cols=2)
     t_p1.alignment = WD_TABLE_ALIGNMENT.CENTER
     p1_data = [
-        ("Name of the Student", "Hardik Prakash Kotawdekar"),
+        ("Name of the Student", "Parth Vikas More"),
         ("Program /Semester", "BSC CS SEM IV"),
-        ("Roll No/Seat No", "54 / BSCS-IV-2526/6125"),
+        ("Roll No/Seat No", "66 / BSCS-IV-2526/6145"),
         ("Field project Title", "PhishShield"),
-        ("Name of the Faculty mentor", "Mrs. Bindy Wilson"),
+        ("Name of the Faculty mentor", "Mrs. Priti Chopade"),
         ("Overview (Max 150 Words)\n(Brief summary of key activities)", "The PhishShield Project is a multi-source phishing detection system featuring browser extensions, mobile apps, and backend threat detection modules. The platform is designed to be user-friendly, responsive, and scalable. In this system, users can analyze links, QR codes, and suspicious domain patterns in real-time."),
         ("Learning Outcomes (Max 100 words)\n(Highlight main lessons)", "PhishShield is a multi-source phishing detection platform offering link heuristics, brand-spoofing NLP, and quishing analysis designed for security awareness and real-time defense, with high scalability and cross-platform adaptability."),
         ("Mentor Feedback and Suggestions (Max 100 words)", "Abstract is completed and it’s fine")
@@ -416,11 +419,11 @@ def create_report_docx(filename):
     t_p1c = doc.add_table(rows=8, cols=2)
     t_p1c.alignment = WD_TABLE_ALIGNMENT.CENTER
     p1c_data = [
-        ("Name of the Student", "Hardik Prakash Kotawdekar"),
+        ("Name of the Student", "Parth Vikas More"),
         ("Program /Semester", "BSC CS SEM IV"),
-        ("Roll No/Seat No", "54 / BSCS-IV-2526/6125"),
+        ("Roll No/Seat No", "66 / BSCS-IV-2526/6145"),
         ("Field project Title", "PhishShield"),
-        ("Name of the Faculty mentor", "Mrs. Bindy Wilson"),
+        ("Name of the Faculty mentor", "Mrs. Priti Chopade"),
         ("Overview (Max 150 Words)", "PhishShield is an interactive and scalable online phishing detection platform designed to make browsing secure and transparent. It provides features like heuristic domain checks, NLP brand analysis, QR parsing, and real-time threat verdicts. The platform supports educators, students, organizations, and security teams with easy telemetry management and real-time insights."),
         ("Learning Outcomes (Max 100 words)", "• Ability to design and develop a scalable online threat detection system.\n• Implement features like heuristics, NLP brand checking, and QR parsing.\n• Manage telemetry logs efficiently through database services.\n• Apply the platform across web extensions, mobile apps, and security contexts."),
         ("Mentor Feedback and Suggestions", "Change the Scope of this chapter. Chapter 1 is completed and its fine")
@@ -632,5 +635,10 @@ def create_report_docx(filename):
     print(f"Successfully generated {filename}")
 
 if __name__ == "__main__":
-    output_path = r"d:\PhishSheildTY\phishshield\PhishShield_Project_Report_Till_Chapter_3.docx"
+    import sys
+    if len(sys.argv) > 1:
+        output_path = sys.argv[1]
+    else:
+        output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "PhishShield_Project_Report_Till_Chapter_3.docx")
     create_report_docx(output_path)
+

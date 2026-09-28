@@ -9,6 +9,9 @@ class ScanRequest(BaseModel):
     text: Optional[str] = Field(default=None, description="SMS or text message to scan")
     platform: str = Field(default="unknown", min_length=1, max_length=64)
     image_b64: Optional[str] = Field(default=None, description="Optional base64 encoded QR image")
+    device_id: Optional[str] = Field(default=None, min_length=1, max_length=64)
+    nickname: Optional[str] = Field(default=None, min_length=1, max_length=40)
+    avatar_id: Optional[str] = Field(default=None, min_length=1, max_length=32)
 
     @model_validator(mode="after")
     def validate_scan_target(self) -> "ScanRequest":
@@ -28,20 +31,21 @@ class ScanRequest(BaseModel):
 
 
 class ScanError(BaseModel):
-    status: Literal["ERROR"] = "ERROR"
-    message: Literal["Invalid URL or text format provided for threat analysis."] = (
-        "Invalid URL or text format provided for threat analysis."
-    )
+    status: Literal["ERROR", "INVALID_INPUT"] = "INVALID_INPUT"
+    message: str = "Invalid URL or text format provided for threat analysis."
 
 
 class HeuristicsResult(BaseModel):
     suspicious_tld: bool
+    is_dynamic_dns: bool = False
+    is_known_safe: bool = False
     domain_length: int
     has_ip_address: bool
     special_char_count: int
     typosquatting: bool = False
     url_entropy: float = Field(0.0, ge=0.0, le=1.0)
     score: float = Field(..., ge=0.0, le=1.0)
+    signals: list[str] = Field(default_factory=list)
 
 
 class NLPResult(BaseModel):
@@ -49,6 +53,7 @@ class NLPResult(BaseModel):
     sentiment_anomaly: bool
     keyword_density: float = Field(0.0, ge=0.0, le=1.0)
     score: float = Field(..., ge=0.0, le=1.0)
+    signals: list[str] = Field(default_factory=list)
 
 
 class QRResult(BaseModel):
@@ -69,6 +74,9 @@ class ThreatVerdict(BaseModel):
     url: str
     input_type: Literal["url", "text"]
     verdict: Literal["SAFE", "SUSPICIOUS", "MALICIOUS", "UNVERIFIED"]
+    risk_score: float = Field(..., ge=0.0, le=1.0)
+    confidence_label: str = Field(...)
     overall_confidence: float = Field(..., ge=0.0, le=1.0)
+    signals: list[str] = Field(default_factory=list)
     engine_results: EngineModuleResults
     timestamp: datetime = Field(default_factory=datetime.utcnow)

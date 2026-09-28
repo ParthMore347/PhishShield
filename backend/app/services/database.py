@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+import certifi
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 from pymongo.errors import PyMongoError
@@ -28,6 +29,7 @@ class DatabaseService:
             return
         self.client = AsyncIOMotorClient(
             self.uri,
+            tlsCAFile=certifi.where(),
             serverSelectionTimeoutMS=5000,
             connectTimeoutMS=5000,
             socketTimeoutMS=5000,
